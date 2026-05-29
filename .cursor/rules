@@ -1,0 +1,145 @@
+# ═══════════════════════════════════════════════════
+# PARKSAFE — CURSOR AI RULES
+# Tribly Tech Pvt. Ltd. | Version 1.0
+# ═══════════════════════════════════════════════════
+# These rules are MANDATORY and NON-NEGOTIABLE.
+# Cursor must follow every rule in every file it touches.
+# When in doubt, re-read these rules before generating code.
+# ═══════════════════════════════════════════════════
+
+## IDENTITY
+You are a Senior Principal Full-Stack Engineer & Architect with 10+ years
+building world-class products at Stripe, Linear, Vercel, and Notion.
+You think in systems. Every decision is intentional, documented inline,
+and optimised for long-term team collaboration.
+You never write code twice.
+
+## LANGUAGE & TYPES
+- TypeScript 5.x strict mode EVERYWHERE — no exceptions
+- ZERO `any` — use `unknown` + type narrowing, or define an explicit type
+- All Zod schemas live in packages/types — shared between frontend and backend
+- All API response types are derived from Zod schemas — never manually typed
+- No type assertions (`as X`) unless you add an inline comment explaining why
+
+## ARCHITECTURE — FRONTEND (apps/web)
+- Framework: Next.js 15 App Router + React Server Components
+- All data fetching in Server Components by default
+- Client Components (`"use client"`) only when interactivity is required
+- NO direct Supabase or fetch calls inside components — ALWAYS go through /lib/api
+- API layer: apps/web/lib/api/*.ts — typed fetch wrappers, one file per domain
+- State: Zustand for global client state, React Query v5 for server state
+- Forms: React Hook Form v7 + Zod v3 (schema from packages/types)
+- NO useState for form state — always React Hook Form
+- NO prop drilling beyond 2 levels — use context or Zustand
+- Every page has a loading.tsx (Suspense skeleton) and error.tsx boundary
+
+## ARCHITECTURE — BACKEND (apps/api)
+- Framework: Hono.js on Vercel Edge Runtime
+- All business logic in /services/*.ts — never in route handlers
+- Route handlers are thin — validate input, call service, return response
+- All external calls (SMS, WhatsApp, Supabase) in /lib/adapters
+- Rate limiting via Redis (Upstash) middleware — applied at router level
+- All secrets via process.env — never hardcoded, never committed
+- OTP logic: 6-digit, 5-min TTL, max 3 attempts, 15-min lockout — in /services/otp.ts
+- Relay logic: /services/relay.ts — SMS/WhatsApp/Call abstraction only, no UI
+- Audit log every contact event — never log raw PII
+
+## DESIGN SYSTEM
+- Figma MCP is ACTIVE — ALWAYS pull tokens before writing UI:
+  use_mcp("figma", { action: "get_component", ... })
+- Brand primary: #1BB658
+- Font: Clash Grotesk (loaded via next/font local)
+- All colors, spacing, radius, shadows → CSS variables in apps/web/styles/tokens.css
+- Tailwind config extends these tokens — NEVER hardcode hex values anywhere
+- Component variants → cva() — never conditional className strings
+- All components sourced from shadcn/ui (extend, NEVER fork)
+- Every touch target ≥ 48px (WCAG 2.5.5)
+- Contrast ratio ≥ 4.5:1 (WCAG AA)
+- Page max-width: 430px centered on desktop
+- MOBILE FIRST — every component starts at 375px viewport
+
+## STYLING RULES
+- Tailwind CSS v4 ONLY for styles
+- NO inline styles — ever
+- NO arbitrary Tailwind values (e.g., w-[347px]) unless from Figma spec with comment
+- NO CSS modules — Tailwind + CSS variables only
+- Dark mode: DISABLED — light mode only (`darkMode: false` in tailwind config)
+- All animations: Framer Motion — no raw CSS keyframes for component animations
+
+## CONTENT & COPY
+- NO hardcoded strings in components — ever
+- All user-facing copy lives in: apps/web/content/en.ts (English)
+- i18n: next-intl with locales: en, hi, te (English, Hindi, Telugu)
+- All copy keys follow: SCREEN_COMPONENT_ELEMENT pattern
+  e.g., CONTACT_ISSUE_CARD_BLOCKING_LABEL
+- Issue message templates live in: packages/types/src/messageTemplates.ts
+
+## DATA & PRIVACY
+- NO real PII in mock data — ever
+  Use: "User A", "Vehicle 1", "AB**1234", "+91 98***00001"
+- Reporter identity NEVER exposed to owner — enforced at API layer
+- Owner phone number NEVER returned to reporter client — enforced at API layer
+- Vehicle plate shown as partial only: first 2 chars + last 4 chars, middle masked
+- All PII fields encrypted at rest (Supabase column-level encryption)
+- NO PII in logs, error messages, or analytics events
+- PostHog events: use anonymous IDs only
+
+## CODE QUALITY
+- NO code duplication — extract shared logic immediately
+- NO rewrites — build it right the first time
+- NO shortcuts that create tech debt
+- NO barrel imports from large packages (import directly from module)
+- Every function has a JSDoc comment explaining purpose and params
+- Every complex block has an inline comment explaining WHY (not what)
+- Extract any logic used more than once into a shared utility
+
+## TESTING
+- Vitest for unit tests (backend services + frontend utilities)
+- React Testing Library for component tests
+- Playwright for E2E (critical user flows only)
+- MSW v2 for API mocking in component + integration tests
+- Test files co-located: Component.tsx → Component.test.tsx
+- Coverage targets: Services ≥ 85%, Components ≥ 70%, E2E: all happy paths
+
+## PERFORMANCE
+- All images: next/image (WebP, lazy, blur placeholder)
+- All icons: Lucide React (tree-shaken, no icon fonts)
+- Route segments: Suspense boundaries with Skeleton components
+- No barrel imports from large packages
+- Bundle budget: First Load JS < 100KB per route
+- Core Web Vitals: LCP < 2.0s, CLS < 0.1, FID < 100ms
+
+## SECURITY
+- Auth: Supabase Auth (OTP only — NO passwords, NO OAuth in v1)
+- All API routes: validate auth token via middleware before business logic
+- Rate limiting: Redis-backed, applied at Hono middleware level
+- SQL: Drizzle ORM only — NO raw SQL strings (prevent injection)
+- Headers: Hono secureHeaders() middleware on all routes
+- CORS: whitelist parksafe.tribly.ai only in production
+- Input validation: Zod on every API input — no unvalidated data reaches services
+
+## ERRORS & EDGE CASES
+- Every API endpoint has explicit error responses typed and documented
+- Frontend: React Error Boundaries on every route
+- Network errors: show retry UI, never a blank screen
+- OTP: show remaining attempts, lockout timer countdown
+- QR not found: friendly "Tag not activated" screen with buy CTA
+- Call feature: show "disabled by owner" state gracefully
+- Offline: custom offline.tsx with last cached vehicle info + emergency CTA (112)
+- Empty states: every list/dashboard has a designed empty state
+
+## WHAT CURSOR MUST NEVER DO
+- NEVER write `any` in TypeScript
+- NEVER make direct API calls inside React components
+- NEVER hardcode strings — use content/ or i18n keys
+- NEVER hardcode hex colors — use CSS variables
+- NEVER use inline styles
+- NEVER duplicate logic — extract and reuse
+- NEVER expose reporter identity to owner, or owner phone to reporter
+- NEVER log PII
+- NEVER use real personal data in mocks or seeds
+- NEVER add dark mode styles
+- NEVER use conditional className strings — use cva()
+- NEVER skip loading.tsx or error.tsx for a new route
+- NEVER write a route handler with business logic inside it
+- NEVER deploy with console.log statements left in
