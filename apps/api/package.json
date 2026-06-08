@@ -14,24 +14,28 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "hono": "^4.0.0",
-    "@hono/zod-validator": "^0.4.0",
-    "zod": "^3.0.0",
-    "@upstash/redis": "^1.0.0",
-    "@upstash/ratelimit": "^2.0.0",
-    "twilio": "^5.0.0",
     "@hono/node-server": "^1.19.0",
-    "@parksafe/types": "workspace:*",
+    "@hono/zod-validator": "^0.4.0",
     "@parksafe/db": "workspace:*",
+    "@parksafe/types": "workspace:*",
+    "@upstash/ratelimit": "^2.0.0",
+    "@upstash/redis": "^1.0.0",
+    "archiver": "6.0.2",
     "drizzle-orm": "^0.30.0",
+    "hono": "^4.0.0",
+    "jose": "^5.0.0",
     "postgres": "^3.0.0",
-    "jose": "^5.0.0"
+    "qrcode": "^1.5.4",
+    "twilio": "^5.0.0",
+    "zod": "^3.0.0"
   },
   "devDependencies": {
-    "typescript": "^5.4.0",
+    "@types/archiver": "5.3.4",
     "@types/node": "^20.0.0",
+    "@types/qrcode": "^1.5.6",
+    "eslint": "^9.0.0",
     "tsx": "^4.0.0",
-    "vitest": "^1.0.0",
-    "eslint": "^9.0.0"
+    "typescript": "^5.4.0",
+    "vitest": "^1.0.0"
   }
 }
