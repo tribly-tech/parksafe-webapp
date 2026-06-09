@@ -26,6 +26,7 @@ export const routes = {
   dashboardSettings: '/dashboard/settings',
   terms: '/terms',
   privacy: '/privacy',
+  admin: '/admin',
   contact: {
     preview: '/contact',
     tag: (tagId: string) => `/contact/${encodeURIComponent(tagId)}`,

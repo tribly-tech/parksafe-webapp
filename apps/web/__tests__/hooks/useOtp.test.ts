@@ -10,7 +10,9 @@ vi.mock('@/lib/api/auth', () => ({
 const { requestOtp, verifyOtp } = await import('@/lib/api/auth')
 
 describe('useOtp', () => {
-  beforeEach(() => vi.clearAllMocks())
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
 
   it('starts in idle phase', () => {
     const { result } = renderHook(() => useOtp())

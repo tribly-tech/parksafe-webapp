@@ -84,5 +84,27 @@ export {
   type UpdateSettingsInput,
 } from './schemas/profile.schema'
 
+export {
+  TagBatchStatusSchema,
+  CreateTagBatchSchema,
+  TagBatchSummarySchema,
+  CreateTagBatchResponseSchema,
+  TagBatchListResponseSchema,
+  AdminAuthCheckResponseSchema,
+  MAX_TAG_BATCH_SIZE,
+  type TagBatchStatus,
+  type CreateTagBatchInput,
+  type TagBatchSummary,
+  type CreateTagBatchResponse,
+  type TagBatchListResponse,
+  type AdminAuthCheckResponse,
+  TagInventorySummarySchema,
+  TagBatchInventoryRowSchema,
+  TagInventoryResponseSchema,
+  type TagInventorySummary,
+  type TagBatchInventoryRow,
+  type TagInventoryResponse,
+} from './schemas/admin.schema'
+
 // Message templates
 export { MESSAGE_TEMPLATES } from './messageTemplates'

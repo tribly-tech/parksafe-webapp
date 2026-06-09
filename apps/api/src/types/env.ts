@@ -34,6 +34,11 @@ const baseEnvSchema = z.object({
 
   UPSTASH_REDIS_REST_URL: z.string().url().optional(),
   UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
+
+  /** Admin QR generation — required in production */
+  ADMIN_API_KEY: z.string().min(32).optional(),
+  /** Public site URL encoded in generated QR codes */
+  SITE_URL: z.string().url().optional(),
 })
 
 export type Env = z.infer<typeof baseEnvSchema>
@@ -53,6 +58,8 @@ const DEV_ENV_DEFAULTS: Record<string, string> = {
   WHATSAPP_PHONE_ID: 'dev-phone-id',
   UPSTASH_REDIS_REST_URL: 'https://localhost',
   UPSTASH_REDIS_REST_TOKEN: 'dev-redis-token',
+  ADMIN_API_KEY: 'dev-only-admin-api-key-32chars-minimum',
+  SITE_URL: 'http://localhost:3000',
 }
 
 function loadEnv(): Env {
@@ -61,9 +68,14 @@ function loadEnv(): Env {
   const useDevDefaults =
     otpDevMode && process.env.USE_PRODUCTION_ENV !== 'true' && !process.env.DATABASE_URL
 
-  const merged = useDevDefaults
+  const merged: Record<string, string | undefined> = useDevDefaults
     ? { ...DEV_ENV_DEFAULTS, ...process.env, NODE_ENV: nodeEnv }
     : { ...process.env, NODE_ENV: nodeEnv }
+
+  // Dev fallback — admin key works locally even when DATABASE_URL is set
+  if (otpDevMode && !merged['ADMIN_API_KEY']) {
+    merged['ADMIN_API_KEY'] = DEV_ENV_DEFAULTS['ADMIN_API_KEY']
+  }
 
   const parsed = baseEnvSchema.parse(merged)
 
