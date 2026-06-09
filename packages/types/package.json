@@ -4,16 +4,22 @@
   "private": true,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "files": ["dist"],
   "exports": {
-  ".": "./dist/index.js",
-  "./messageTemplates": "./dist/messageTemplates.js"
-},
-  
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./messageTemplates": {
+      "types": "./dist/messageTemplates.d.ts",
+      "default": "./dist/messageTemplates.js"
+    }
+  },
   "scripts": {
-  "build": "tsc",
-  "type-check": "tsc --noEmit",
-  "lint": "eslint src --ext .ts"
-},
+    "build": "tsc",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src --ext .ts"
+  },
   "dependencies": {
     "zod": "^3.0.0"
   },
