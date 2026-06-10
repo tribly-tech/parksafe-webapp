@@ -1,9 +1,7 @@
 [build]
-# --force bypasses stale Turbo/Railpack cache that can skip workspace package builds
-buildCommand = "pnpm turbo build --filter=@parksafe/types --filter=@parksafe/db --filter=@parksafe/api --force"
+buildCommand = "node scripts/railway.mjs build"
 
 [deploy]
-# Rebuild shared packages at start as a safety net (fast, ~2s)
-startCommand = "pnpm turbo build --filter=@parksafe/types --filter=@parksafe/db --force && pnpm --filter @parksafe/api start"
+startCommand = "node scripts/railway.mjs start"
 healthcheckPath = "/health"
 restartPolicyType = "ON_FAILURE"
