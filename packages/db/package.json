@@ -2,13 +2,21 @@
   "name": "@parksafe/db",
   "version": "1.0.0",
   "private": true,
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./schema": "./src/schema.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./schema": {
+      "types": "./dist/schema.d.ts",
+      "default": "./dist/schema.js"
+    }
   },
   "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
     "db:generate": "drizzle-kit generate:pg",
     "db:migrate": "tsx src/migrate.ts",
     "db:studio": "drizzle-kit studio",
