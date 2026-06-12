@@ -17,7 +17,7 @@ export const en = {
   GLOBAL_UPDATING: 'Updating…',
   GLOBAL_PRIVACY_BADGE_DEFAULT: 'Anonymous & private',
   GLOBAL_SITE_URL: 'https://parksafe.tribly.ai',
-  GLOBAL_BUY_URL: 'https://parksafe.tribly.ai/buy',
+  GLOBAL_BUY_URL: 'https://parksafe.tribly.ai/register',
 
   // ── Metadata ───────────────────────────────────────────────────────────
   META_DEFAULT_TITLE: 'ParkSafe — Anonymous Vehicle Communication',
