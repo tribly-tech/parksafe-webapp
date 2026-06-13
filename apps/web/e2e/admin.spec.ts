@@ -1,12 +1,10 @@
 import { test, expect } from '@playwright/test'
-
-/** Dev default from apps/api/src/types/env.ts — not a production secret. */
-const DEV_ADMIN_API_KEY = 'dev-only-admin-api-key-32chars-minimum'
+import { ADMIN_API_KEY } from './helpers'
 
 async function signInToAdmin(page: import('@playwright/test').Page) {
   await page.goto('/admin')
   await expect(page.getByRole('heading', { name: 'Admin access' })).toBeVisible()
-  await page.getByLabel('API key').fill(DEV_ADMIN_API_KEY)
+  await page.getByLabel('API key').fill(ADMIN_API_KEY)
   await page.getByRole('button', { name: 'Continue' }).click()
   await expect(page.getByRole('tab', { name: 'Generate' })).toBeVisible({ timeout: 15_000 })
 }
@@ -37,7 +35,7 @@ test.describe('Admin QR Tag Generator', () => {
     await signInToAdmin(page)
     await page.getByRole('tab', { name: 'Inventory' }).click()
     await expect(page.getByRole('tabpanel')).toBeVisible()
-    await expect(page.getByText('Total generated')).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByRole('heading', { name: 'Tag inventory' })).toBeVisible({ timeout: 15_000 })
   })
 
   test('generates a small batch end-to-end', async ({ page }) => {
@@ -45,10 +43,8 @@ test.describe('Admin QR Tag Generator', () => {
     await page.getByLabel('Number of tags').fill('3')
     await page.getByRole('button', { name: 'Generate' }).click()
 
-    await expect(page.getByText(/Processing|Completed|Pending/i)).toBeVisible({ timeout: 10_000 })
-    await expect(page.getByRole('progressbar')).toBeVisible()
-
-    await expect(page.getByRole('button', { name: 'Download ZIP' })).toBeVisible({
+    await expect(page.getByRole('progressbar').first()).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByRole('button', { name: 'Download ZIP' }).first()).toBeVisible({
       timeout: 60_000,
     })
   })

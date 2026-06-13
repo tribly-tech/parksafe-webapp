@@ -1,9 +1,10 @@
 import { test, expect } from '@playwright/test'
-
-const ADMIN_API_KEY =
-  process.env['ADMIN_API_KEY'] ?? 'parksafe-admin-development-key-123456789'
-const WEB_BASE = process.env['PLAYWRIGHT_BASE_URL'] ?? 'http://localhost:3000'
-const API_BASE = `${WEB_BASE}/backend`
+import {
+  ADMIN_API_KEY,
+  API_BASE,
+  captureDevOtpFromNextRequest,
+  fillOtpInputs,
+} from './helpers'
 
 async function createFreshTag(request: import('@playwright/test').APIRequestContext): Promise<string> {
   const createRes = await request.post(`${API_BASE}/admin/tags/batches`, {
@@ -39,6 +40,7 @@ async function createFreshTag(request: import('@playwright/test').APIRequestCont
 }
 
 test.describe('QR scan → register vehicle', () => {
+  test.describe.configure({ mode: 'serial' })
   test.setTimeout(60_000)
 
   test('generates QR, scans unregistered tag, completes registration', async ({ page, request }) => {
@@ -51,6 +53,10 @@ test.describe('QR scan → register vehicle', () => {
     await page.getByRole('link', { name: 'Register vehicle' }).click()
     await expect(page).toHaveURL(new RegExp(`/register\\?tag=${tagCode}`))
 
+    await page.evaluate(() => localStorage.removeItem('parksafe-register-draft'))
+    await page.reload()
+    await expect(page.getByRole('heading', { name: 'Register Your Vehicle' })).toBeVisible()
+
     // Fill registration form
     await page.getByLabel('Vehicle Number').fill('MH12AB9999')
     await page.getByLabel('Vehicle Brand').fill('Hyundai')
@@ -60,25 +66,16 @@ test.describe('QR scan → register vehicle', () => {
     await page.locator('input[name="ownerPhone"]').fill(ownerPhone)
     await page.locator('input[name="emergencyName"]').fill('Emergency Contact')
     await page.locator('input[name="emergencyPhone"]').fill('9876543211')
-    await page.locator('label[for="checkbox-consent"]').click()
+    await page.locator('input[name="consent"]').check({ force: true })
 
-    let devOtp = ''
-    page.on('response', async response => {
-      if (response.url().includes('/auth/request-otp') && response.ok()) {
-        const body = (await response.json()) as { devOtp?: string }
-        if (body.devOtp) devOtp = body.devOtp
-      }
+    const submit = page.getByRole('button', { name: 'Register Vehicle' })
+    await expect(submit).toBeEnabled({ timeout: 10_000 })
+
+    const devOtp = await captureDevOtpFromNextRequest(page, async () => {
+      await submit.click()
     })
-
-    await page.getByRole('button', { name: 'Register Vehicle' }).click()
     await expect(page).toHaveURL(/\/register\/otp/)
-
-    await expect.poll(() => devOtp.length).toBe(6)
-
-    const otpInputs = page.locator('input[inputmode="numeric"]')
-    for (let i = 0; i < 6; i++) {
-      await otpInputs.nth(i).fill(devOtp[i]!)
-    }
+    await fillOtpInputs(page, devOtp)
 
     await expect(page).toHaveURL(/\/register\/success/, { timeout: 15_000 })
     await expect(page.getByText("You're all set!")).toBeVisible()
