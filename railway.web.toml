@@ -1,0 +1,7 @@
+# Next.js frontend service — set Railway "Config file path" to railway.web.toml for the web service.
+[build]
+buildCommand = "pnpm install && pnpm turbo build --filter=@parksafe/types --filter=@parksafe/web --force"
+
+[deploy]
+startCommand = "pnpm --filter @parksafe/web start"
+healthcheckPath = "/"

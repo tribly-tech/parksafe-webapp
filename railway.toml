@@ -1,3 +1,4 @@
+# API backend service — point Railway "Config file path" here, or use these commands in the API service settings.
 [build]
 buildCommand = "pnpm install && pnpm turbo build --filter=@parksafe/types --filter=@parksafe/db --filter=@parksafe/api --force"
 
