@@ -13,6 +13,7 @@ import { dashboardRoutes } from './routes/dashboard'
 import { profileRoutes } from './routes/profile'
 import { contactRoutes } from './routes/contact'
 import { registrationRoutes } from './routes/registration'
+import { adminRoutes } from './routes/admin'
 import { authMiddleware } from './middleware/auth.middleware'
 import { rateLimitMiddleware } from './middleware/rateLimit.middleware'
 import { corsMiddleware } from './middleware/security.middleware'
@@ -41,6 +42,9 @@ app.route('/tags', tagRoutes)
 // Contact: rate-limited but no auth required (reporter flow)
 app.use('/contact/*', rateLimitMiddleware)
 app.route('/contact', contactRoutes)
+
+// Admin: API-key protected tag generation (internal tooling)
+app.route('/admin', adminRoutes)
 
 // ── Authenticated Routes ──────────────────────────────────────────────────────
 app.use('/vehicles/*', authMiddleware)

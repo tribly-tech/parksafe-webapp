@@ -16,8 +16,8 @@ export interface AlertListEvent {
     model: string
     colour: string
     platePartial: string
-    plate?: string
-  }
+    plate?: string | undefined
+  } | undefined
 }
 
 export interface AlertIssueDisplay {

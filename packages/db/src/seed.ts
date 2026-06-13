@@ -6,6 +6,7 @@
  */
 
 import crypto from 'node:crypto'
+import { count } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import * as schema from './schema'
@@ -127,8 +128,71 @@ async function seed() {
   console.log('  Sign-in:   http://localhost:3000/sign-in')
   console.log('             → enter 9876543210 → OTP printed in API terminal')
   console.log('  Dashboard: after sign-in → shows Seed Owner + 2 vehicles')
+  console.log('  Admin:     http://localhost:3000/admin → inventory mock (after db:seed)')
   console.log('')
+  await seedAdminBatches()
   await client.end()
+}
+
+async function seedAdminBatches() {
+  const countRows = await db.select({ value: count() }).from(schema.tagBatches)
+  const batchCount = countRows[0]?.value ?? 0
+  if (batchCount > 0) {
+    console.log('[seed] Admin batches already exist — skipping')
+    return
+  }
+
+  const BATCH_IDS = [
+    '10000000-0000-0000-0000-000000000001',
+    '10000000-0000-0000-0000-000000000002',
+    '10000000-0000-0000-0000-000000000003',
+  ] as const
+
+  const daysAgo = (n: number) => new Date(Date.now() - n * 86_400_000)
+
+  const specs = [
+    { id: BATCH_IDS[0], requestedCount: 100, soldCount: 25, age: 30 },
+    { id: BATCH_IDS[1], requestedCount: 50, soldCount: 8, age: 7 },
+    { id: BATCH_IDS[2], requestedCount: 75, soldCount: 0, age: 1 },
+  ] as const
+
+  console.log('[seed] Seeding admin mock batches…')
+
+  for (const spec of specs) {
+    const createdAt = daysAgo(spec.age)
+    await db.insert(schema.tagBatches).values({
+      id: spec.id,
+      requestedCount: spec.requestedCount,
+      completedCount: spec.requestedCount,
+      status: 'COMPLETED',
+      startedAt: createdAt,
+      completedAt: createdAt,
+      createdAt,
+    })
+
+    const tagRows = []
+    const inactiveSold = Math.floor(spec.soldCount / 3)
+    const activeSold = spec.soldCount - inactiveSold
+
+    for (let i = 0; i < spec.requestedCount; i++) {
+      let status: 'UNREGISTERED' | 'ACTIVE' | 'INACTIVE' = 'UNREGISTERED'
+      if (i < activeSold) status = 'ACTIVE'
+      else if (i < spec.soldCount) status = 'INACTIVE'
+
+      tagRows.push({
+        tagCode: crypto.randomUUID(),
+        batchId: spec.id,
+        status,
+        ...(status !== 'UNREGISTERED' ? { activatedAt: createdAt } : {}),
+      })
+    }
+
+    for (let i = 0; i < tagRows.length; i += 100) {
+      await db.insert(schema.tags).values(tagRows.slice(i, i + 100)).onConflictDoNothing()
+    }
+  }
+
+  console.log('[seed] Admin mock: 3 batches, 225 tags (192 in stock, 33 sold)')
 }
 
 seed().catch(err => {

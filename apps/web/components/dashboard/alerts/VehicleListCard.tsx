@@ -49,7 +49,7 @@ export function VehicleListCard({
       <VehicleActionsMenu
         vehicleLabel={vehicleLabel}
         onDeactivate={onDeactivate}
-        disabled={deactivateDisabled}
+        disabled={deactivateDisabled ?? false}
       />
     </article>
   )

@@ -36,6 +36,13 @@ export const issueTypeEnum = pgEnum('issue_type', [
 
 export const tagStatusEnum = pgEnum('tag_status', ['UNREGISTERED', 'ACTIVE', 'INACTIVE'])
 
+export const tagBatchStatusEnum = pgEnum('tag_batch_status', [
+  'PENDING',
+  'PROCESSING',
+  'COMPLETED',
+  'FAILED',
+])
+
 export const relayStatusEnum = pgEnum('relay_status', ['PENDING', 'DELIVERED', 'FAILED'])
 
 // ── Users ─────────────────────────────────────────────────────────────────────
@@ -98,6 +105,25 @@ export const vehicles = pgTable(
   })
 )
 
+// ── Tag Batches (Admin QR generation jobs) ────────────────────────────────────
+export const tagBatches = pgTable(
+  'tag_batches',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    requestedCount: integer('requested_count').notNull(),
+    completedCount: integer('completed_count').default(0).notNull(),
+    status: tagBatchStatusEnum('status').default('PENDING').notNull(),
+    errorMessage: text('error_message'),
+    startedAt: timestamp('started_at'),
+    completedAt: timestamp('completed_at'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  t => ({
+    statusIdx: index('tag_batches_status_idx').on(t.status),
+    createdAtIdx: index('tag_batches_created_at_idx').on(t.createdAt),
+  })
+)
+
 // ── Tags (QR Stickers) ────────────────────────────────────────────────────────
 export const tags = pgTable(
   'tags',
@@ -105,6 +131,8 @@ export const tags = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     /** UUID printed inside the QR code — the only thing exposed publicly */
     tagCode: text('tag_code').notNull().unique(),
+    /** Set when created via admin bulk generation */
+    batchId: uuid('batch_id').references(() => tagBatches.id, { onDelete: 'set null' }),
     vehicleId: uuid('vehicle_id').references(() => vehicles.id, { onDelete: 'set null' }),
     ownerId: uuid('owner_id').references(() => users.id, { onDelete: 'set null' }),
     status: tagStatusEnum('status').default('UNREGISTERED').notNull(),
@@ -119,6 +147,7 @@ export const tags = pgTable(
   },
   t => ({
     tagCodeIdx: uniqueIndex('tags_tag_code_idx').on(t.tagCode),
+    batchIdx: index('tags_batch_idx').on(t.batchId),
     vehicleIdx: index('tags_vehicle_idx').on(t.vehicleId),
     ownerIdx: index('tags_owner_idx').on(t.ownerId),
   })

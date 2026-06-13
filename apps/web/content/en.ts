@@ -17,7 +17,7 @@ export const en = {
   GLOBAL_UPDATING: 'Updating…',
   GLOBAL_PRIVACY_BADGE_DEFAULT: 'Anonymous & private',
   GLOBAL_SITE_URL: 'https://parksafe.tribly.ai',
-  GLOBAL_BUY_URL: 'https://parksafe.tribly.ai/buy',
+  GLOBAL_BUY_URL: 'https://parksafe.tribly.ai/register',
 
   // ── Metadata ───────────────────────────────────────────────────────────
   META_DEFAULT_TITLE: 'ParkSafe — Anonymous Vehicle Communication',
@@ -54,6 +54,8 @@ export const en = {
   META_ALERTS_SENT_TITLE: 'Alerts sent',
   META_ALERTS_SENT_DESCRIPTION: 'Alerts you sent to other vehicle owners.',
   META_VERIFY_OTP_TITLE: 'Verify OTP',
+  META_ADMIN_TITLE: 'Admin — QR Tag Generator',
+  META_ADMIN_DESCRIPTION: 'Generate bulk ParkSafe QR tags with unique IDs for sticker printing.',
 
   // ── Accessibility labels ─────────────────────────────────────────────────
   ARIA_MESSAGE_DELIVERED: 'Message delivered successfully',
@@ -168,7 +170,7 @@ export const en = {
 
   CONTACT_TAG_NOT_ACTIVATED_TITLE: 'Tag not activated',
   CONTACT_TAG_NOT_ACTIVATED_BODY: 'This ParkSafe tag hasn\'t been registered yet.',
-  CONTACT_TAG_NOT_ACTIVATED_CTA: 'Get ParkSafe',
+  CONTACT_TAG_NOT_ACTIVATED_CTA: 'Register vehicle',
   CONTACT_TAG_INACTIVE_TITLE: 'Tag temporarily inactive',
   CONTACT_TAG_INACTIVE_BODY: 'The vehicle owner has paused notifications on this tag.',
 
@@ -413,6 +415,82 @@ export const en = {
   NOT_FOUND_TITLE: 'Page not found',
   NOT_FOUND_BODY: 'The page you\'re looking for doesn\'t exist.',
   NOT_FOUND_CTA: 'Go home',
+
+  // ── Admin (QR tag generation) ───────────────────────────────────────────
+  ADMIN_PAGE_BADGE: 'Internal',
+  ADMIN_PAGE_TITLE: 'QR Tag Generator',
+  ADMIN_PAGE_SUBTITLE: 'Create unique QR stickers with IDs for printing and inventory tracking.',
+
+  ADMIN_AUTH_TITLE: 'Admin access',
+  ADMIN_AUTH_SUBTITLE: 'Enter your admin API key to continue.',
+  ADMIN_AUTH_API_KEY_LABEL: 'API key',
+  ADMIN_AUTH_API_KEY_PLACEHOLDER: 'Paste admin API key',
+  ADMIN_AUTH_SUBMIT: 'Continue',
+  ADMIN_AUTH_VERIFYING: 'Verifying…',
+  ADMIN_AUTH_SIGN_OUT: 'Sign out',
+  ADMIN_AUTH_ERROR_EMPTY: 'API key is required.',
+  ADMIN_AUTH_ERROR_INVALID: 'Invalid API key. Check the value and try again.',
+  ADMIN_AUTH_ERROR_NOT_CONFIGURED: 'Admin access is not configured on the server.',
+  ADMIN_AUTH_ERROR_NETWORK: 'Could not reach the server. Check your connection.',
+
+  ADMIN_GENERATE_TITLE: 'Generate tags',
+  ADMIN_GENERATE_SUBTITLE: 'Each tag gets a unique UUID encoded in its QR code.',
+  ADMIN_COUNT_LABEL: 'Number of tags',
+  ADMIN_COUNT_HINT: 'Between 1 and {max} tags per batch.',
+  ADMIN_GENERATE_CTA: 'Generate',
+  ADMIN_GENERATING: 'Generating…',
+  ADMIN_ERROR_MIN_COUNT: 'Enter at least 1 tag.',
+  ADMIN_ERROR_MAX_COUNT: 'Maximum {max} tags per batch.',
+  ADMIN_ERROR_BATCH_IN_PROGRESS: 'Wait for the current batch to finish before starting a new one.',
+  ADMIN_ERROR_DOWNLOAD: 'Download failed. Try again.',
+
+  ADMIN_BATCH_PROGRESS_TITLE: 'Generating {count} tags',
+  ADMIN_BATCH_COUNT: '{completed} of {total}',
+  ADMIN_STATUS_PENDING: 'Queued',
+  ADMIN_STATUS_PROCESSING: 'Generating',
+  ADMIN_STATUS_COMPLETED: 'Complete',
+  ADMIN_STATUS_FAILED: 'Failed',
+  ADMIN_ETA_CALCULATING: 'Estimating time…',
+  ADMIN_ETA_DONE: 'Finishing up',
+  ADMIN_ETA_SECONDS: '~{count}s remaining',
+  ADMIN_ETA_MINUTES: '~{count} min remaining',
+
+  ADMIN_DOWNLOAD_ZIP: 'Download ZIP',
+  ADMIN_DOWNLOAD_PREPARING: 'Preparing download…',
+  ADMIN_DOWNLOAD_INFO_TITLE: 'What\'s in the ZIP?',
+  ADMIN_DOWNLOAD_INFO_QR: 'PNG QR codes in qr-codes/ — one file per tag.',
+  ADMIN_DOWNLOAD_INFO_CSV: 'tag_inventory.csv with Tag ID, code, contact URL, and status.',
+  ADMIN_DOWNLOAD_INFO_SHEETS: 'Import the CSV directly into Google Sheets for inventory.',
+
+  ADMIN_HISTORY_TITLE: 'Recent batches',
+  ADMIN_HISTORY_SUBTITLE: 'Previously generated tag batches.',
+  ADMIN_HISTORY_TAGS: 'tags',
+  ADMIN_HISTORY_EMPTY: 'No batches yet.',
+  ADMIN_HISTORY_ERROR: 'Could not load batch history.',
+
+  ADMIN_TAB_GENERATE: 'Generate',
+  ADMIN_TAB_INVENTORY: 'Inventory',
+  ADMIN_TABS_ARIA: 'Admin sections',
+
+  ADMIN_INVENTORY_TITLE: 'Tag inventory',
+  ADMIN_INVENTORY_SUBTITLE: 'Live counts from your database — generated, in stock, and sold.',
+  ADMIN_INVENTORY_REFRESH: 'Refresh',
+  ADMIN_INVENTORY_ERROR: 'Could not load inventory. Try again.',
+  ADMIN_INVENTORY_GENERATED: 'Generated',
+  ADMIN_INVENTORY_GENERATED_HINT: 'Total tags created in the system.',
+  ADMIN_INVENTORY_STOCK: 'In stock',
+  ADMIN_INVENTORY_STOCK_HINT: 'Unregistered tags — available for sale or distribution.',
+  ADMIN_INVENTORY_SOLD: 'Sold',
+  ADMIN_INVENTORY_SOLD_HINT: 'Registered by owners — active or inactive.',
+  ADMIN_INVENTORY_SOLD_BREAKDOWN: '{active} active · {inactive} inactive',
+  ADMIN_INVENTORY_UPDATED: 'Last updated {time}',
+  ADMIN_INVENTORY_BATCHES_TITLE: 'By batch',
+  ADMIN_INVENTORY_BATCHES_SUBTITLE: 'Stock breakdown for each generation run.',
+  ADMIN_INVENTORY_BATCHES_EMPTY: 'No batches yet. Generate tags on the first tab.',
+  ADMIN_INVENTORY_COL_DATE: 'Batch',
+  ADMIN_INVENTORY_COL_GENERATED: 'Generated',
+  ADMIN_INVENTORY_COL_STOCK: 'In stock',
+  ADMIN_INVENTORY_COL_SOLD: 'Sold',
 } as const
 
 export type CopyKey = keyof typeof en
