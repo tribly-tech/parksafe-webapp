@@ -170,7 +170,7 @@ export const en = {
 
   CONTACT_TAG_NOT_ACTIVATED_TITLE: 'Tag not activated',
   CONTACT_TAG_NOT_ACTIVATED_BODY: 'This ParkSafe tag hasn\'t been registered yet.',
-  CONTACT_TAG_NOT_ACTIVATED_CTA: 'Get ParkSafe',
+  CONTACT_TAG_NOT_ACTIVATED_CTA: 'Register vehicle',
   CONTACT_TAG_INACTIVE_TITLE: 'Tag temporarily inactive',
   CONTACT_TAG_INACTIVE_BODY: 'The vehicle owner has paused notifications on this tag.',
 
