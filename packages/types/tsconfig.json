@@ -9,11 +9,13 @@
     "exactOptionalPropertyTypes": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
+    "outDir": "dist",
+    "rootDir": "src",
     "declaration": true,
     "declarationMap": true,
     "outDir": "./dist",
     "rootDir": "./src"
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "dist"]
 }
