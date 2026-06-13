@@ -73,16 +73,15 @@ function loadEnv(): Env {
   const nodeEnv = (process.env.NODE_ENV ?? 'development') as Env['NODE_ENV']
   const otpDevMode = isOtpDevModeEnabled(nodeEnv)
 
-  const useDevDefaults =
-    otpDevMode && process.env.USE_PRODUCTION_ENV !== 'true' && !process.env.DATABASE_URL
+  const merged: Record<string, string | undefined> = { ...process.env, NODE_ENV: nodeEnv }
 
-  const merged: Record<string, string | undefined> = useDevDefaults
-    ? { ...DEV_ENV_DEFAULTS, ...process.env, NODE_ENV: nodeEnv }
-    : { ...process.env, NODE_ENV: nodeEnv }
-
-  // Dev fallback — admin key works locally even when DATABASE_URL is set
-  if (otpDevMode && !merged['ADMIN_API_KEY']) {
-    merged['ADMIN_API_KEY'] = DEV_ENV_DEFAULTS['ADMIN_API_KEY']
+  // Staging/local: fill missing vars when OTP dev mode is on (DATABASE_URL may still be set).
+  if (otpDevMode && process.env.USE_PRODUCTION_ENV !== 'true') {
+    for (const [key, value] of Object.entries(DEV_ENV_DEFAULTS)) {
+      if (!merged[key]) {
+        merged[key] = value
+      }
+    }
   }
 
   try {
