@@ -313,7 +313,7 @@ export const en = {
     'When someone scans your ParkSafe QR tag, they can alert you without seeing your phone number — and you never see theirs.',
   HELP_FAQ_Q2: 'How do I register a new vehicle?',
   HELP_FAQ_A2:
-    'From your dashboard, tap Register vehicle and scan the QR sticker on your windshield. Fill in your vehicle details to activate alerts.',
+    'Scan the QR sticker on your new vehicle and complete registration with the same mobile number. You can also add a vehicle from your dashboard when signed in.',
   HELP_FAQ_Q3: 'How do I change notification settings?',
   HELP_FAQ_A3:
     'Open Settings from your profile to turn SMS, WhatsApp, or product update emails on or off.',
@@ -457,8 +457,14 @@ export const en = {
 
   ADMIN_DOWNLOAD_ZIP: 'Download ZIP',
   ADMIN_DOWNLOAD_PREPARING: 'Preparing download…',
+  ADMIN_BATCH_SAMPLES_TITLE: 'New tag URLs (from this batch)',
+  ADMIN_BATCH_SAMPLES_HINT:
+    'Each batch gets new UUIDs. Copy a Contact URL below to test on this PC — phone cameras cannot open localhost.',
+  ADMIN_BATCH_SAMPLES_OPEN: 'Open',
+  ADMIN_BATCH_SAMPLES_COPY: 'Copy URL',
+  ADMIN_BATCH_SAMPLES_COPIED: 'Copied',
   ADMIN_DOWNLOAD_INFO_TITLE: 'What\'s in the ZIP?',
-  ADMIN_DOWNLOAD_INFO_QR: 'PNG QR codes in qr-codes/ — one file per tag.',
+  ADMIN_DOWNLOAD_INFO_QR: 'PNG QR codes in qr-codes/{batch}/ — one file per tag, in a batch-specific folder.',
   ADMIN_DOWNLOAD_INFO_CSV: 'tag_inventory.csv with Tag ID, code, contact URL, and status.',
   ADMIN_DOWNLOAD_INFO_SHEETS: 'Import the CSV directly into Google Sheets for inventory.',
 

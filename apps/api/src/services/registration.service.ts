@@ -1,5 +1,6 @@
 /**
  * Owner registration — OTP verification, user creation, vehicle + tag activation.
+ * Existing owners can register additional vehicles on the same mobile number.
  */
 
 import { hashPhone, toE164Indian } from '../lib/phone'
@@ -12,10 +13,15 @@ import {
   createDevUserId,
   createDevVehicle,
 } from './dev-registration'
-import { addDevVehicle, linkDevPhone, setDevProfile } from './dev-store'
+import {
+  addDevVehicle,
+  findDevUserIdByPhone,
+  linkDevPhone,
+  setDevProfile,
+} from './dev-store'
 import {
   createUser,
-  UserAlreadyExistsError,
+  findUserByPhoneHash,
 } from '../repositories/users.repository'
 import { activateTag as activateTagInDb } from '../repositories/tags.repository'
 import { getDb } from '../lib/db'
@@ -29,6 +35,77 @@ interface RegistrationResult {
   vehicle?: Vehicle
   error?: string
   statusCode?: number
+}
+
+async function resolveOwnerUser(
+  ownerName: string,
+  ownerPhoneE164: string
+): Promise<{ id: string }> {
+  if (isOtpDevMode && !getDb()) {
+    const existingUserId = findDevUserIdByPhone(ownerPhoneE164)
+    if (existingUserId) {
+      return { id: existingUserId }
+    }
+
+    const userId = createDevUserId()
+    setDevProfile(userId, ownerName)
+    linkDevPhone(ownerPhoneE164, userId)
+    return { id: userId }
+  }
+
+  const existing = await findUserByPhoneHash(hashPhone(ownerPhoneE164))
+  if (existing) {
+    return { id: existing.id }
+  }
+
+  const user = await createUser({
+    displayName: ownerName,
+    phoneE164: ownerPhoneE164,
+  })
+  return { id: user.id }
+}
+
+async function completeRegistration(
+  userId: string,
+  input: RegisterVehicleInput
+): Promise<RegistrationResult> {
+  const vehicleResult = await createVehicle(userId, {
+    make: input.make,
+    model: input.model,
+    colour: input.colour,
+    plate: input.plate,
+  })
+
+  if (!vehicleResult.success || !vehicleResult.vehicle) {
+    return {
+      success: false,
+      error: vehicleResult.error ?? 'Failed to register vehicle',
+    }
+  }
+
+  if (input.tagCode) {
+    const activated = await activateTagInDb(
+      input.tagCode,
+      userId,
+      vehicleResult.vehicle.id,
+      input.whatsappEnabled
+    )
+    if (!activated) {
+      console.warn('[registration] Tag activation failed for code:', input.tagCode)
+    }
+  }
+
+  const tokens = isOtpDevMode
+    ? createDevSession(userId)
+    : await issueTokenPair(userId)
+
+  return {
+    success: true,
+    accessToken: tokens.accessToken,
+    refreshToken: tokens.refreshToken,
+    userId,
+    vehicle: vehicleResult.vehicle,
+  }
 }
 
 /**
@@ -45,18 +122,15 @@ export async function registerVehicle(
   }
 
   if (isOtpDevMode && !getDb()) {
-    const userId = createDevUserId()
-    const { accessToken, refreshToken } = createDevSession(userId)
-    const vehicle = createDevVehicle(userId, {
+    const user = await resolveOwnerUser(input.ownerName, ownerPhoneE164)
+    const vehicle = createDevVehicle(user.id, {
       make: input.make,
       model: input.model,
       colour: input.colour,
       plate: input.plate,
     })
-    setDevProfile(userId, input.ownerName)
-    linkDevPhone(ownerPhoneE164, userId)
     addDevVehicle(
-      userId,
+      user.id,
       {
         make: input.make,
         model: input.model,
@@ -66,66 +140,20 @@ export async function registerVehicle(
       vehicle
     )
 
+    const { accessToken, refreshToken } = createDevSession(user.id)
     return {
       success: true,
       accessToken,
       refreshToken,
-      userId,
+      userId: user.id,
       vehicle,
     }
   }
 
   try {
-    const user = await createUser({
-      displayName: input.ownerName,
-      phoneE164: ownerPhoneE164,
-    })
-
-    const vehicleResult = await createVehicle(user.id, {
-      make: input.make,
-      model: input.model,
-      colour: input.colour,
-      plate: input.plate,
-    })
-
-    if (!vehicleResult.success || !vehicleResult.vehicle) {
-      return {
-        success: false,
-        error: vehicleResult.error ?? 'Failed to register vehicle',
-      }
-    }
-
-    if (input.tagCode) {
-      const activated = await activateTagInDb(
-        input.tagCode,
-        user.id,
-        vehicleResult.vehicle.id,
-        input.whatsappEnabled
-      )
-      if (!activated) {
-        console.warn('[registration] Tag activation failed for code:', input.tagCode)
-      }
-    }
-
-    const tokens = isOtpDevMode
-      ? createDevSession(user.id)
-      : await issueTokenPair(user.id)
-
-    return {
-      success: true,
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
-      userId: user.id,
-      vehicle: vehicleResult.vehicle,
-    }
+    const user = await resolveOwnerUser(input.ownerName, ownerPhoneE164)
+    return await completeRegistration(user.id, input)
   } catch (err) {
-    if (err instanceof UserAlreadyExistsError) {
-      return {
-        success: false,
-        error: 'This mobile number is already registered. Please sign in instead.',
-        statusCode: 409,
-      }
-    }
     console.error('[registration] Failed:', err instanceof Error ? err.message : err)
     return { success: false, error: 'Registration failed. Please try again.' }
   }

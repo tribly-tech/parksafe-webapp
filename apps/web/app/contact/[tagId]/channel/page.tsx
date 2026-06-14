@@ -43,14 +43,7 @@ export default async function ContactTagChannelPage({ params, searchParams }: Pr
       )
     }
 
-    return (
-      <ContactStatusScreen
-        emoji="🏷️"
-        title={en.CONTACT_TAG_NOT_ACTIVATED_TITLE}
-        body={en.CONTACT_TAG_NOT_ACTIVATED_BODY}
-        cta={{ label: en.CONTACT_TAG_NOT_ACTIVATED_CTA, href: routes.register({ tag: tagId }) }}
-      />
-    )
+    redirect(routes.register({ tag: tagId }))
   }
 
   const { data } = result

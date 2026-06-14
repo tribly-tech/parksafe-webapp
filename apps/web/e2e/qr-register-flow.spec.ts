@@ -33,7 +33,7 @@ async function createFreshTag(request: import('@playwright/test').APIRequestCont
   expect(zipRes.ok()).toBeTruthy()
   const zipBuffer = await zipRes.body()
   const pngMatch = zipBuffer.toString('binary').match(
-    /qr-codes\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.png/i
+    /qr-codes\/[0-9a-f]{8}\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.png/i
   )
   if (!pngMatch?.[1]) throw new Error('Could not parse tag code from batch ZIP')
   return pngMatch[1]
@@ -47,10 +47,8 @@ test.describe('QR scan → register vehicle', () => {
     const tagCode = await createFreshTag(request)
     const ownerPhone = `9${String(Date.now()).slice(-9)}`
 
-    // Simulate scanning the QR — opens /contact/{tagCode}
+    // Simulate scanning the QR — unregistered tags go straight to registration
     await page.goto(`/contact/${tagCode}`)
-    await expect(page.getByText('Tag not activated')).toBeVisible()
-    await page.getByRole('link', { name: 'Register vehicle' }).click()
     await expect(page).toHaveURL(new RegExp(`/register\\?tag=${tagCode}`))
 
     await page.evaluate(() => localStorage.removeItem('parksafe-register-draft'))

@@ -24,7 +24,9 @@ if (isOtpDevMode) {
 if (process.env.NODE_ENV === 'development' && process.env['DATABASE_URL']) {
   const { seedAdminDbMockData } =
     require('./services/admin-db-seed') as typeof import('./services/admin-db-seed')
-  void seedAdminDbMockData()
+  void seedAdminDbMockData().catch((err: unknown) => {
+    console.error('[admin-db-seed] Failed (API will keep running):', err)
+  })
 }
 
 console.log(`[api] ParkSafe API listening on http://localhost:${port}`)

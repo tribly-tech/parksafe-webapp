@@ -6,6 +6,7 @@ import type {
   AdminAuthCheckResponse,
   CreateTagBatchResponse,
   TagBatchListResponse,
+  TagBatchSample,
   TagBatchSummary,
   TagInventoryResponse,
 } from '@parksafe/types'
@@ -99,6 +100,17 @@ export async function getTagInventory(apiKey: string): Promise<TagInventoryRespo
     apiKey,
     method: 'GET',
   })
+}
+
+export async function getTagBatchSamples(
+  apiKey: string,
+  batchId: string
+): Promise<TagBatchSample[]> {
+  const result = await adminFetch<{ batchId: string; samples: TagBatchSample[] }>(
+    `/admin/tags/batches/${encodeURIComponent(batchId)}/samples`,
+    { apiKey, method: 'GET' }
+  )
+  return result.samples
 }
 
 export async function downloadTagBatchZip(
