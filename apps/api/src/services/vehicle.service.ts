@@ -16,7 +16,7 @@ import {
   listVehiclesByOwner,
   softDeleteVehicle,
 } from '../repositories/vehicles.repository'
-import { deactivateTagsByVehicleId } from '../repositories/tags.repository'
+import { unregisterTagsByVehicleId } from '../repositories/tags.repository'
 import { getDb } from '../lib/db'
 
 function mapVehicleRow(
@@ -85,7 +85,7 @@ export async function deleteVehicle(
     return { success: false, error: 'Vehicle not found' }
   }
 
-  await deactivateTagsByVehicleId(vehicleId)
+  await unregisterTagsByVehicleId(vehicleId)
   return { success: true }
 }
 

@@ -75,13 +75,13 @@ describe('tag.service integration', () => {
     expect(result.tag?.vehicle.platePartial).toBe('MH**1234')
   })
 
-  it('returns inactive with no vehicle after the linked vehicle is deleted', async () => {
+  it('returns unregistered with no vehicle after the linked vehicle is deleted', async () => {
     const deleted = await deleteVehicle(vehicleId, ownerId)
     expect(deleted.success).toBe(true)
 
     const result = await getTagByCode(tagCode)
     expect(result.found).toBe(true)
-    expect(result.tag?.status).toBe('INACTIVE')
+    expect(result.tag?.status).toBe('UNREGISTERED')
     expect(result.tag?.vehicle).toEqual({
       make: '',
       model: '',
@@ -92,15 +92,30 @@ describe('tag.service integration', () => {
 
     const db = getDb()
     const row = await db?.select().from(tags).where(eq(tags.tagCode, tagCode)).limit(1)
-    expect(row?.[0]?.status).toBe('INACTIVE')
+    expect(row?.[0]?.status).toBe('UNREGISTERED')
+    expect(row?.[0]?.ownerId).toBeNull()
+    expect(row?.[0]?.vehicleId).toBeNull()
   })
 
-  it('returns inactive when owner/vehicle links are cleared but tag stayed active', async () => {
+  it('returns unregistered when owner/vehicle links are cleared but tag stayed active', async () => {
     const db = getDb()
     await db
       ?.update(tags)
       .set({ ownerId: null, vehicleId: null, status: 'ACTIVE' })
       .where(eq(tags.tagCode, tagCode))
+
+    const result = await getTagByCode(tagCode)
+    expect(result.found).toBe(true)
+    expect(result.tag?.status).toBe('UNREGISTERED')
+    expect(result.tag?.vehicle.make).toBe('')
+
+    const row = await db?.select().from(tags).where(eq(tags.tagCode, tagCode)).limit(1)
+    expect(row?.[0]?.status).toBe('UNREGISTERED')
+  })
+
+  it('keeps owner-paused inactive tags unavailable when registration is still valid', async () => {
+    const db = getDb()
+    await db?.update(tags).set({ status: 'INACTIVE' }).where(eq(tags.tagCode, tagCode))
 
     const result = await getTagByCode(tagCode)
     expect(result.found).toBe(true)

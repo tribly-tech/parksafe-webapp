@@ -4,7 +4,7 @@
 import type { TagInfo, UpdateTagInput } from '@parksafe/types'
 
 import {
-  deactivateTagById,
+  unregisterTagById,
   findTagByCode,
   updateTagPreferences,
   createTag,
@@ -20,13 +20,24 @@ interface TagLookupResult {
   error?: string
 }
 
-/** Active tags must still have a linked owner and live vehicle row. */
+/** Active registration requires owner, vehicle link, and a live vehicle row. */
 function isTagRegistered(row: TagWithVehicleRow): boolean {
-  return Boolean(row.ownerId && row.vehicleId && row.vehicleMake)
+  return Boolean(
+    row.ownerId && row.vehicleId && row.vehicleMake && row.vehicleIsActive === true
+  )
 }
 
 function emptyVehicle(): TagInfo['vehicle'] {
   return { make: '', model: '', colour: '', platePartial: '' }
+}
+
+function buildUnregisteredTagInfo(row: TagWithVehicleRow): TagInfo {
+  return {
+    tagId: row.id,
+    status: 'UNREGISTERED',
+    vehicle: emptyVehicle(),
+    availableChannels: [],
+  }
 }
 
 function buildInactiveTagInfo(row: TagWithVehicleRow): TagInfo {
@@ -59,7 +70,7 @@ function buildActiveTagInfo(row: TagWithVehicleRow): TagInfo {
 
 /**
  * Looks up a tag by its public tag code (from the QR URL).
- * Orphaned ACTIVE tags (vehicle/owner removed) are exposed as INACTIVE with no vehicle data.
+ * Orphaned tags (vehicle/owner removed) reset to UNREGISTERED for a fresh setup flow.
  */
 export async function getTagByCode(tagCode: string): Promise<TagLookupResult> {
   const row = await findTagByCode(tagCode)
@@ -69,23 +80,15 @@ export async function getTagByCode(tagCode: string): Promise<TagLookupResult> {
   }
 
   if (row.status === 'UNREGISTERED') {
-    return {
-      found: true,
-      tag: {
-        tagId: row.id,
-        status: 'UNREGISTERED',
-        vehicle: emptyVehicle(),
-        availableChannels: [],
-      },
-    }
-  }
-
-  if (row.status === 'INACTIVE') {
-    return { found: true, tag: buildInactiveTagInfo(row) }
+    return { found: true, tag: buildUnregisteredTagInfo(row) }
   }
 
   if (!isTagRegistered(row)) {
-    void deactivateTagById(row.id)
+    await unregisterTagById(row.id)
+    return { found: true, tag: buildUnregisteredTagInfo(row) }
+  }
+
+  if (row.status === 'INACTIVE') {
     return { found: true, tag: buildInactiveTagInfo(row) }
   }
 
