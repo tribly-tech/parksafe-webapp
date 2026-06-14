@@ -41,7 +41,10 @@ export async function findTagByCode(tagCode: string): Promise<TagWithVehicleRow 
       vehiclePlatePartial: vehicles.platePartial,
     })
     .from(tags)
-    .leftJoin(vehicles, eq(tags.vehicleId, vehicles.id))
+    .leftJoin(
+      vehicles,
+      and(eq(tags.vehicleId, vehicles.id), eq(vehicles.isActive, true))
+    )
     .where(eq(tags.tagCode, tagCode))
     .limit(1)
 
@@ -69,7 +72,10 @@ export async function findTagById(tagId: string): Promise<TagWithVehicleRow | nu
       vehiclePlatePartial: vehicles.platePartial,
     })
     .from(tags)
-    .leftJoin(vehicles, eq(tags.vehicleId, vehicles.id))
+    .leftJoin(
+      vehicles,
+      and(eq(tags.vehicleId, vehicles.id), eq(vehicles.isActive, true))
+    )
     .where(eq(tags.id, tagId))
     .limit(1)
 
@@ -159,6 +165,32 @@ export async function getAllTags() {
   if (!db) return []
 
   return await db.select().from(tags)
+}
+
+export async function deactivateTagsByVehicleId(vehicleId: string): Promise<number> {
+  const db = getDb()
+  if (!db) return 0
+
+  const rows = await db
+    .update(tags)
+    .set({ status: 'INACTIVE', updatedAt: new Date() })
+    .where(and(eq(tags.vehicleId, vehicleId), eq(tags.status, 'ACTIVE')))
+    .returning({ id: tags.id })
+
+  return rows.length
+}
+
+export async function deactivateTagById(tagId: string): Promise<boolean> {
+  const db = getDb()
+  if (!db) return false
+
+  const rows = await db
+    .update(tags)
+    .set({ status: 'INACTIVE', updatedAt: new Date() })
+    .where(and(eq(tags.id, tagId), eq(tags.status, 'ACTIVE')))
+    .returning({ id: tags.id })
+
+  return rows.length > 0
 }
 
 export async function deleteTag(tagCode: string) {

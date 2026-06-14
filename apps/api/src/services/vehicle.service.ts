@@ -16,6 +16,7 @@ import {
   listVehiclesByOwner,
   softDeleteVehicle,
 } from '../repositories/vehicles.repository'
+import { deactivateTagsByVehicleId } from '../repositories/tags.repository'
 import { getDb } from '../lib/db'
 
 function mapVehicleRow(
@@ -80,7 +81,12 @@ export async function deleteVehicle(
   }
 
   const ok = await softDeleteVehicle(vehicleId, ownerId)
-  return ok ? { success: true } : { success: false, error: 'Vehicle not found' }
+  if (!ok) {
+    return { success: false, error: 'Vehicle not found' }
+  }
+
+  await deactivateTagsByVehicleId(vehicleId)
+  return { success: true }
 }
 
 export async function decryptPlate(plateEncrypted: string): Promise<string | null> {

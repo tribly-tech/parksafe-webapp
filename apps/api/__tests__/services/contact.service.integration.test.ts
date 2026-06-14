@@ -7,7 +7,8 @@ import {
 import { createUser } from '../../src/repositories/users.repository'
 import { insertVehicle } from '../../src/repositories/vehicles.repository'
 import { getDb } from '../../src/lib/db'
-import { tags } from '@parksafe/db'
+import { tags, vehicles } from '@parksafe/db'
+import { eq } from 'drizzle-orm'
 
 vi.mock('../../src/services/relay.service', () => ({
   dispatchRelay: vi.fn().mockResolvedValue({ success: true, providerMessageId: 'msg-1' }),
@@ -93,6 +94,28 @@ describe('contact.service integration', () => {
       channel: 'WHATSAPP',
       sessionId: 'test-session',
     })
+    expect(result.success).toBe(false)
+    expect(result.status).toBe(400)
+  })
+
+  it('returns 400 after vehicle data is deleted', async () => {
+    const db = getDb()
+    const tagRow = await db?.select().from(tags).where(eq(tags.tagCode, tagCode)).limit(1)
+    const vehicleId = tagRow?.[0]?.vehicleId
+    expect(vehicleId).toBeTruthy()
+
+    await db
+      ?.update(vehicles)
+      .set({ isActive: false })
+      .where(eq(vehicles.id, vehicleId!))
+
+    const result = await processContactRequest({
+      tagId: tagCode,
+      issueType: 'WRONG_PARKING',
+      channel: 'SMS',
+      sessionId: 'test-session',
+    })
+
     expect(result.success).toBe(false)
     expect(result.status).toBe(400)
   })
