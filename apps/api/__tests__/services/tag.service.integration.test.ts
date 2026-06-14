@@ -59,7 +59,6 @@ describe('tag.service integration', () => {
         ownerId,
         vehicleId,
         status: 'ACTIVE',
-        notifySms: true,
         notifyWhatsapp: true,
         callEnabled: false,
       })

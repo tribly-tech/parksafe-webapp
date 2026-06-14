@@ -50,8 +50,7 @@ function buildInactiveTagInfo(row: TagWithVehicleRow): TagInfo {
 }
 
 function buildActiveTagInfo(row: TagWithVehicleRow): TagInfo {
-  const availableChannels: Array<'SMS' | 'WHATSAPP' | 'CALL'> = []
-  if (row.notifySms) availableChannels.push('SMS')
+  const availableChannels: Array<'WHATSAPP' | 'CALL'> = []
   if (row.notifyWhatsapp) availableChannels.push('WHATSAPP')
   if (row.callEnabled) availableChannels.push('CALL')
 
@@ -104,7 +103,6 @@ export async function updateTag(
   updates: UpdateTagInput
 ): Promise<{ success: boolean; error?: string }> {
   const ok = await updateTagPreferences(tagId, ownerId, {
-    ...(updates.notifySms !== undefined ? { notifySms: updates.notifySms } : {}),
     ...(updates.notifyWhatsapp !== undefined ? { notifyWhatsapp: updates.notifyWhatsapp } : {}),
     ...(updates.callEnabled !== undefined ? { callEnabled: updates.callEnabled } : {}),
     ...(updates.status !== undefined ? { status: updates.status } : {}),

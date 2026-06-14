@@ -57,8 +57,7 @@ describe('contact.service integration', () => {
         ownerId: user.id,
         vehicleId: vehicle.id,
         status: 'ACTIVE',
-        notifySms: true,
-        notifyWhatsapp: false,
+        notifyWhatsapp: true,
         callEnabled: false,
       })
     }
@@ -68,7 +67,7 @@ describe('contact.service integration', () => {
     const result = await processContactRequest({
       tagId: tagCode,
       issueType: 'WRONG_PARKING',
-      channel: 'SMS',
+      channel: 'WHATSAPP',
       sessionId: 'test-session-id',
     })
 
@@ -80,7 +79,7 @@ describe('contact.service integration', () => {
     const result = await processContactRequest({
       tagId: 'nonexistent-tag',
       issueType: 'WRONG_PARKING',
-      channel: 'SMS',
+      channel: 'WHATSAPP',
       sessionId: 'test-session',
     })
     expect(result.success).toBe(false)
@@ -91,7 +90,7 @@ describe('contact.service integration', () => {
     const result = await processContactRequest({
       tagId: tagCode,
       issueType: 'WRONG_PARKING',
-      channel: 'WHATSAPP',
+      channel: 'CALL',
       sessionId: 'test-session',
     })
     expect(result.success).toBe(false)
