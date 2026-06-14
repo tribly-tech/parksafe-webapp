@@ -43,6 +43,21 @@ export const TagBatchListResponseSchema = z.object({
 
 export type TagBatchListResponse = z.infer<typeof TagBatchListResponseSchema>
 
+export const TagBatchSampleSchema = z.object({
+  tagCode: z.string().uuid(),
+  contactUrl: z.string().url(),
+  status: z.enum(['UNREGISTERED', 'ACTIVE', 'INACTIVE']),
+})
+
+export type TagBatchSample = z.infer<typeof TagBatchSampleSchema>
+
+export const TagBatchSamplesResponseSchema = z.object({
+  batchId: z.string().uuid(),
+  samples: z.array(TagBatchSampleSchema),
+})
+
+export type TagBatchSamplesResponse = z.infer<typeof TagBatchSamplesResponseSchema>
+
 export const AdminAuthCheckResponseSchema = z.object({
   authenticated: z.literal(true),
 })

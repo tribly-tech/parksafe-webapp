@@ -4,12 +4,14 @@
 import type { TagInfo, UpdateTagInput } from '@parksafe/types'
 
 import {
+  unregisterTagById,
   findTagByCode,
   updateTagPreferences,
   createTag,
   getAllTags,
   deleteTag,
   createBulkTags,
+  type TagWithVehicleRow,
 } from '../repositories/tags.repository'
 
 interface TagLookupResult {
@@ -18,8 +20,56 @@ interface TagLookupResult {
   error?: string
 }
 
+/** Active registration requires owner, vehicle link, and a live vehicle row. */
+function isTagRegistered(row: TagWithVehicleRow): boolean {
+  return Boolean(
+    row.ownerId && row.vehicleId && row.vehicleMake && row.vehicleIsActive === true
+  )
+}
+
+function emptyVehicle(): TagInfo['vehicle'] {
+  return { make: '', model: '', colour: '', platePartial: '' }
+}
+
+function buildUnregisteredTagInfo(row: TagWithVehicleRow): TagInfo {
+  return {
+    tagId: row.id,
+    status: 'UNREGISTERED',
+    vehicle: emptyVehicle(),
+    availableChannels: [],
+  }
+}
+
+function buildInactiveTagInfo(row: TagWithVehicleRow): TagInfo {
+  return {
+    tagId: row.id,
+    status: 'INACTIVE',
+    vehicle: emptyVehicle(),
+    availableChannels: [],
+  }
+}
+
+function buildActiveTagInfo(row: TagWithVehicleRow): TagInfo {
+  const availableChannels: Array<'WHATSAPP' | 'CALL'> = []
+  if (row.notifyWhatsapp) availableChannels.push('WHATSAPP')
+  if (row.callEnabled) availableChannels.push('CALL')
+
+  return {
+    tagId: row.id,
+    status: 'ACTIVE',
+    vehicle: {
+      make: row.vehicleMake ?? '',
+      model: row.vehicleModel ?? '',
+      colour: row.vehicleColour ?? '',
+      platePartial: row.vehiclePlatePartial ?? '',
+    },
+    availableChannels,
+  }
+}
+
 /**
  * Looks up a tag by its public tag code (from the QR URL).
+ * Orphaned tags (vehicle/owner removed) reset to UNREGISTERED for a fresh setup flow.
  */
 export async function getTagByCode(tagCode: string): Promise<TagLookupResult> {
   const row = await findTagByCode(tagCode)
@@ -28,24 +78,20 @@ export async function getTagByCode(tagCode: string): Promise<TagLookupResult> {
     return { found: false }
   }
 
-  const availableChannels: Array<'WHATSAPP' | 'CALL'> = []
-  if (row.notifyWhatsapp) availableChannels.push('WHATSAPP')
-  if (row.callEnabled) availableChannels.push('CALL')
-
-  return {
-    found: true,
-    tag: {
-      tagId: row.id,
-      status: row.status,
-      vehicle: {
-        make: row.vehicleMake ?? '',
-        model: row.vehicleModel ?? '',
-        colour: row.vehicleColour ?? '',
-        platePartial: row.vehiclePlatePartial ?? '',
-      },
-      availableChannels,
-    },
+  if (row.status === 'UNREGISTERED') {
+    return { found: true, tag: buildUnregisteredTagInfo(row) }
   }
+
+  if (!isTagRegistered(row)) {
+    await unregisterTagById(row.id)
+    return { found: true, tag: buildUnregisteredTagInfo(row) }
+  }
+
+  if (row.status === 'INACTIVE') {
+    return { found: true, tag: buildInactiveTagInfo(row) }
+  }
+
+  return { found: true, tag: buildActiveTagInfo(row) }
 }
 
 /**

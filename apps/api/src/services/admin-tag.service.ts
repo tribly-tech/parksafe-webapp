@@ -183,6 +183,23 @@ export async function getTagBatchStatus(
   return mapBatchToSummary(batch)
 }
 
+export async function listBatchTagSamples(
+  batchId: string,
+  limit = 5
+): Promise<
+  Array<{ tagCode: string; contactUrl: string; status: 'UNREGISTERED' | 'ACTIVE' | 'INACTIVE' }>
+> {
+  const tagRows = getDb()
+    ? await listTagsByBatchId(batchId)
+    : adminDevListTagsByBatch(batchId)
+
+  return tagRows.slice(0, limit).map(row => ({
+    tagCode: row.tagCode,
+    contactUrl: buildContactUrl(row.tagCode),
+    status: row.status,
+  }))
+}
+
 export async function listTagBatchHistory(limit = 10): Promise<TagBatchSummary[]> {
   if (!getDb()) {
     return adminDevListBatchSummaries(limit)
@@ -253,7 +270,26 @@ export async function buildBatchZipStream(
 
   const zip = new JSZip()
   zip.file('tag_inventory.csv', buildInventoryCsv(tagRows))
-  const qrFolder = zip.folder('qr-codes')
+
+  const batchFolderName = batchId.slice(0, 8)
+  const readme = [
+    'ParkSafe QR batch export',
+    '',
+    `Batch ID: ${batchId}`,
+    `Tags in this ZIP: ${tagRows.length}`,
+    '',
+    'Files:',
+    '- tag_inventory.csv — Tag Code and Contact URL for each tag',
+    `- qr-codes/${batchFolderName}/ — PNG files named by Tag Code (UUID)`,
+    '',
+    'Testing locally:',
+    '- Open the Contact URL from the CSV on the same PC (not your phone).',
+    '- localhost URLs in QR codes only work on the machine running the dev server.',
+    '- Each PNG is unique — do not reuse PNG files from older batches.',
+  ].join('\n')
+  zip.file('README.txt', readme)
+
+  const qrFolder = zip.folder(`qr-codes/${batchFolderName}`)
 
   if (!qrFolder) {
     return { success: false, error: 'Failed to create ZIP archive', status: 500 }

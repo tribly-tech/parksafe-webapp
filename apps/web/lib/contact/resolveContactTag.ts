@@ -15,13 +15,16 @@ export type ResolveContactResult =
 
 /**
  * Resolves tag data for contact flow pages.
- * In local dev, falls back to preview data when the API has no tag.
  */
 export async function resolveContactTag(tagId: string): Promise<ResolveContactResult> {
   const tag = await getTagInfo(tagId)
 
-  if (!tag || tag.status === 'UNREGISTERED') {
+  if (!tag) {
     return { ok: false, reason: 'NOT_FOUND' }
+  }
+
+  if (tag.status === 'UNREGISTERED') {
+    return { ok: false, reason: 'UNREGISTERED' }
   }
 
   if (tag.status === 'INACTIVE') {

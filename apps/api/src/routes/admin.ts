@@ -6,6 +6,7 @@ import { adminMiddleware } from '../middleware/admin.middleware'
 import {
   buildBatchZipStream,
   getTagBatchStatus,
+  listBatchTagSamples,
   listTagBatchHistory,
   startTagBatchGeneration,
 } from '../services/admin-tag.service'
@@ -58,6 +59,23 @@ adminRoutes.get('/tags/batches/:batchId', async c => {
   }
 
   return c.json({ batch })
+})
+
+/** GET /admin/tags/batches/:batchId/samples — first few tag codes for testing */
+adminRoutes.get('/tags/batches/:batchId/samples', async c => {
+  const batchId = c.req.param('batchId')
+  const batch = await getTagBatchStatus(batchId)
+
+  if (!batch) {
+    return c.json({ error: 'Batch not found', code: 'BATCH_NOT_FOUND' }, 404)
+  }
+
+  if (batch.status !== 'COMPLETED') {
+    return c.json({ error: 'Batch is not ready', code: 'BATCH_NOT_READY' }, 409)
+  }
+
+  const samples = await listBatchTagSamples(batchId, 5)
+  return c.json({ batchId, samples })
 })
 
 /** GET /admin/tags/batches/:batchId/download — ZIP with QR PNGs + CSV inventory */

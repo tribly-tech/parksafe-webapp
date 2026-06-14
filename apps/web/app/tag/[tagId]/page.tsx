@@ -5,7 +5,8 @@ interface Props {
   params: Promise<{ tagId: string }>
 }
 
-export default async function QRPage({ params }: Props) {
+/** Legacy/alternate QR path — routes to register or contact based on tag status. */
+export default async function TagEntryPage({ params }: Props) {
   const { tagId } = await params
   const entry = await resolveQrEntry(tagId)
   redirect(qrEntryPath(entry))

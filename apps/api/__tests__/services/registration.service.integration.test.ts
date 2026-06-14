@@ -4,7 +4,6 @@ import {
   teardownIntegrationDb,
   truncateAllTables,
 } from '../helpers/integration-db'
-import { createUser } from '../../src/repositories/users.repository'
 import { getDb } from '../../src/lib/db'
 import { tags } from '@parksafe/db'
 import { eq } from 'drizzle-orm'
@@ -74,13 +73,33 @@ describe('registration.service integration', () => {
     expect(result.vehicle?.platePartial).toBe('MH**1234')
   })
 
-  it('returns 409 for duplicate phone registration', async () => {
-    await createUser({ displayName: 'Existing', phoneE164: '+919876543210' })
-
-    const result = await registerVehicle({
-      ownerName: 'Duplicate',
+  it('adds another vehicle when the phone is already registered', async () => {
+    const first = await registerVehicle({
+      ownerName: 'Aditya',
       ownerPhone: '9876543210',
-      emergencyName: 'E',
+      emergencyName: 'Emergency',
+      emergencyPhone: '9876543211',
+      make: 'Maruti',
+      model: 'Swift',
+      colour: 'White',
+      plate: 'MH12AB1234',
+      vehicleType: 'CAR',
+      whatsappEnabled: true,
+      consent: true,
+      otp: '654321',
+    })
+
+    expect(first.success).toBe(true)
+
+    await getDb()?.insert(tags).values({
+      tagCode: 'second-tag-code-002',
+      status: 'UNREGISTERED',
+    })
+
+    const second = await registerVehicle({
+      ownerName: 'Aditya',
+      ownerPhone: '9876543210',
+      emergencyName: 'Emergency',
       emergencyPhone: '9876543211',
       make: 'Honda',
       model: 'City',
@@ -90,9 +109,12 @@ describe('registration.service integration', () => {
       whatsappEnabled: false,
       consent: true,
       otp: '654321',
+      tagCode: 'second-tag-code-002',
     })
 
-    expect(result.success).toBe(false)
-    expect(result.statusCode).toBe(409)
+    expect(second.success).toBe(true)
+    expect(second.userId).toBe(first.userId)
+    expect(second.vehicle?.make).toBe('Honda')
+    expect(second.vehicle?.platePartial).toBe('KA**9999')
   })
 })

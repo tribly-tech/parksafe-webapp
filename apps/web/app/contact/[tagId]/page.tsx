@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { redirect } from 'next/navigation'
 import { ContactIssueStep } from '@/components/contact/ContactIssueStep'
 import { ContactStatusScreen } from '@/components/contact/ContactStatusScreen'
 import { resolveContactTag } from '@/lib/contact/resolveContactTag'
@@ -32,14 +33,8 @@ export default async function ContactTagIssuePage({ params }: Props) {
       )
     }
 
-    return (
-      <ContactStatusScreen
-        emoji="🏷️"
-        title={en.CONTACT_TAG_NOT_ACTIVATED_TITLE}
-        body={en.CONTACT_TAG_NOT_ACTIVATED_BODY}
-        cta={{ label: en.CONTACT_TAG_NOT_ACTIVATED_CTA, href: routes.register({ tag: tagId }) }}
-      />
-    )
+    // Unregistered or unknown tag — owner should register, not report an issue.
+    redirect(routes.register({ tag: tagId }))
   }
 
   const { data } = result

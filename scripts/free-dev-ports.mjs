@@ -7,9 +7,26 @@
 import { execSync } from 'node:child_process'
 
 const DEV_PORTS = [3000, 3001]
+const isWindows = process.platform === 'win32'
 
 function pidsOnPort(port) {
   try {
+    if (isWindows) {
+      const out = execSync(`netstat -ano | findstr :${port}`, { encoding: 'utf8' })
+      const pids = new Set()
+
+      for (const line of out.split('\n')) {
+        if (!line.includes('LISTENING')) continue
+        const parts = line.trim().split(/\s+/)
+        const pid = parts.at(-1)
+        if (pid && /^\d+$/.test(pid) && pid !== '0') {
+          pids.add(pid)
+        }
+      }
+
+      return [...pids]
+    }
+
     const out = execSync(`lsof -ti tcp:${port}`, { encoding: 'utf8' }).trim()
     return out ? out.split('\n').filter(Boolean) : []
   } catch {
@@ -17,13 +34,27 @@ function pidsOnPort(port) {
   }
 }
 
-function killPid(pid, signal) {
+function killPid(pid) {
   try {
-    process.kill(Number(pid), signal)
+    if (isWindows) {
+      execSync(`taskkill /PID ${pid} /F`, { stdio: 'ignore' })
+      return true
+    }
+
+    process.kill(Number(pid), 'SIGTERM')
     return true
   } catch {
     return false
   }
+}
+
+function sleep(ms) {
+  if (isWindows) {
+    execSync('powershell -Command "Start-Sleep -Milliseconds ' + ms + '"', { stdio: 'ignore' })
+    return
+  }
+
+  execSync(`sleep ${ms / 1000}`)
 }
 
 for (const port of DEV_PORTS) {
@@ -32,14 +63,13 @@ for (const port of DEV_PORTS) {
     if (pids.length === 0) break
 
     for (const pid of pids) {
-      const signal = attempt === 0 ? 'SIGTERM' : 'SIGKILL'
-      if (killPid(pid, signal)) {
-        console.log(`[dev] Freed port ${port} (pid ${pid}, ${signal})`)
+      if (killPid(pid)) {
+        console.log(`[dev] Freed port ${port} (pid ${pid})`)
       }
     }
 
     if (attempt < 2) {
-      execSync('sleep 0.2')
+      sleep(200)
     }
   }
 }

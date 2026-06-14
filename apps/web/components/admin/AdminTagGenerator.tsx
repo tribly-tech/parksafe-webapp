@@ -1,21 +1,22 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslations } from 'next-intl'
-import { Download, Loader2, QrCode } from 'lucide-react'
+import { Check, Copy, Download, ExternalLink, Loader2, QrCode } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
   createTagBatch,
   downloadTagBatchZip,
+  getTagBatchSamples,
   getTagBatchStatus,
   listTagBatches,
 } from '@/lib/api/admin'
 import { ApiError } from '@/lib/api/client'
 import { useAdminStore } from '@/lib/store/adminStore'
 import { cn } from '@/lib/utils/cn'
-import { MAX_TAG_BATCH_SIZE, type TagBatchSummary } from '@parksafe/types'
+import { MAX_TAG_BATCH_SIZE, type TagBatchSample, type TagBatchSummary } from '@parksafe/types'
 
 const POLL_INTERVAL_MS = 1500
 
@@ -40,12 +41,80 @@ function statusLabel(status: TagBatchSummary['status'], t: (key: string) => stri
   }
 }
 
+function BatchSampleUrls({
+  samples,
+}: {
+  samples: TagBatchSample[]
+}) {
+  const t = useTranslations()
+  const [copiedCode, setCopiedCode] = useState<string | null>(null)
+
+  const handleCopy = useCallback(async (sample: TagBatchSample) => {
+    try {
+      await navigator.clipboard.writeText(sample.contactUrl)
+      setCopiedCode(sample.tagCode)
+      window.setTimeout(() => setCopiedCode(null), 2000)
+    } catch {
+      // Clipboard may be unavailable outside secure context
+    }
+  }, [])
+
+  if (samples.length === 0) return null
+
+  return (
+    <div className="mt-4 rounded-xl border border-primary-100 bg-primary-50/60 p-4">
+      <p className="text-sm font-medium text-neutral-900">{t('ADMIN_BATCH_SAMPLES_TITLE')}</p>
+      <p className="mt-1 text-xs leading-relaxed text-neutral-600">{t('ADMIN_BATCH_SAMPLES_HINT')}</p>
+      <ul className="mt-3 space-y-2">
+        {samples.map(sample => (
+          <li
+            key={sample.tagCode}
+            className="flex flex-col gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <code className="truncate text-xs text-neutral-800">{sample.contactUrl}</code>
+            <div className="flex shrink-0 gap-2">
+              <a
+                href={sample.contactUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 rounded-lg border border-neutral-200 px-2.5 py-1.5 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50"
+              >
+                <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+                {t('ADMIN_BATCH_SAMPLES_OPEN')}
+              </a>
+              <button
+                type="button"
+                onClick={() => void handleCopy(sample)}
+                className="inline-flex items-center gap-1 rounded-lg border border-neutral-200 px-2.5 py-1.5 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50"
+              >
+                {copiedCode === sample.tagCode ? (
+                  <>
+                    <Check className="h-3.5 w-3.5 text-success-500" aria-hidden />
+                    {t('ADMIN_BATCH_SAMPLES_COPIED')}
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-3.5 w-3.5" aria-hidden />
+                    {t('ADMIN_BATCH_SAMPLES_COPY')}
+                  </>
+                )}
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
 function BatchProgressCard({
   batch,
+  samples,
   onDownload,
   isDownloading,
 }: {
   batch: TagBatchSummary
+  samples: TagBatchSample[]
   onDownload: (batchId: string) => void
   isDownloading: boolean
 }) {
@@ -112,13 +181,15 @@ function BatchProgressCard({
       )}
 
       {isComplete && (
-        <Button
-          type="button"
-          variant="secondary"
-          className="mt-4 w-full gap-2 shadow-none"
-          disabled={isDownloading}
-          onClick={() => onDownload(batch.id)}
-        >
+        <>
+          <BatchSampleUrls samples={samples} />
+          <Button
+            type="button"
+            variant="secondary"
+            className="mt-4 w-full gap-2 shadow-none"
+            disabled={isDownloading}
+            onClick={() => onDownload(batch.id)}
+          >
           {isDownloading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
@@ -131,6 +202,7 @@ function BatchProgressCard({
             </>
           )}
         </Button>
+        </>
       )}
     </div>
   )
@@ -177,6 +249,7 @@ export function AdminTagGenerator() {
   const [formError, setFormError] = useState<string | null>(null)
   const [activeBatchId, setActiveBatchId] = useState<string | null>(null)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
+  const autoDownloadedRef = useRef<string | null>(null)
 
   const historyQuery = useQuery({
     queryKey: ['admin', 'batches'],
@@ -194,6 +267,12 @@ export function AdminTagGenerator() {
       if (status === 'COMPLETED' || status === 'FAILED') return false
       return POLL_INTERVAL_MS
     },
+  })
+
+  const activeBatchSamplesQuery = useQuery({
+    queryKey: ['admin', 'batch-samples', activeBatchId],
+    queryFn: () => getTagBatchSamples(apiKey!, activeBatchId!),
+    enabled: Boolean(apiKey && activeBatchId && activeBatchQuery.data?.status === 'COMPLETED'),
   })
 
   useEffect(() => {
@@ -262,6 +341,15 @@ export function AdminTagGenerator() {
     },
     [apiKey, downloadingId, t]
   )
+
+  useEffect(() => {
+    const batch = activeBatchQuery.data
+    if (!batch || batch.status !== 'COMPLETED' || !apiKey) return
+    if (autoDownloadedRef.current === batch.id) return
+
+    autoDownloadedRef.current = batch.id
+    void handleDownload(batch.id)
+  }, [activeBatchQuery.data, apiKey, handleDownload])
 
   const activeBatch = activeBatchQuery.data
   const isGenerating =
@@ -333,6 +421,7 @@ export function AdminTagGenerator() {
       {activeBatch && (
         <BatchProgressCard
           batch={activeBatch}
+          samples={activeBatchSamplesQuery.data ?? []}
           onDownload={handleDownload}
           isDownloading={downloadingId === activeBatch.id}
         />

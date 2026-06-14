@@ -18,6 +18,7 @@ export interface TagWithVehicleRow {
   vehicleModel: string | null
   vehicleColour: string | null
   vehiclePlatePartial: string | null
+  vehicleIsActive: boolean | null
 }
 
 export async function findTagByCode(tagCode: string): Promise<TagWithVehicleRow | null> {
@@ -37,6 +38,7 @@ export async function findTagByCode(tagCode: string): Promise<TagWithVehicleRow 
       vehicleModel: vehicles.model,
       vehicleColour: vehicles.colour,
       vehiclePlatePartial: vehicles.platePartial,
+      vehicleIsActive: vehicles.isActive,
     })
     .from(tags)
     .leftJoin(vehicles, eq(tags.vehicleId, vehicles.id))
@@ -64,6 +66,7 @@ export async function findTagById(tagId: string): Promise<TagWithVehicleRow | nu
       vehicleModel: vehicles.model,
       vehicleColour: vehicles.colour,
       vehiclePlatePartial: vehicles.platePartial,
+      vehicleIsActive: vehicles.isActive,
     })
     .from(tags)
     .leftJoin(vehicles, eq(tags.vehicleId, vehicles.id))
@@ -153,6 +156,49 @@ export async function getAllTags() {
   if (!db) return []
 
   return await db.select().from(tags)
+}
+
+export async function unregisterTagsByVehicleId(vehicleId: string): Promise<number> {
+  const db = getDb()
+  if (!db) return 0
+
+  const rows = await db
+    .update(tags)
+    .set({
+      status: 'UNREGISTERED',
+      ownerId: null,
+      vehicleId: null,
+      activatedAt: null,
+      notifyWhatsapp: true,
+      callEnabled: false,
+      updatedAt: new Date(),
+    })
+    .where(eq(tags.vehicleId, vehicleId))
+    .returning({ id: tags.id })
+
+  return rows.length
+}
+
+/** Clears registration so the physical QR can be set up again. */
+export async function unregisterTagById(tagId: string): Promise<boolean> {
+  const db = getDb()
+  if (!db) return false
+
+  const rows = await db
+    .update(tags)
+    .set({
+      status: 'UNREGISTERED',
+      ownerId: null,
+      vehicleId: null,
+      activatedAt: null,
+      notifyWhatsapp: true,
+      callEnabled: false,
+      updatedAt: new Date(),
+    })
+    .where(eq(tags.id, tagId))
+    .returning({ id: tags.id })
+
+  return rows.length > 0
 }
 
 export async function deleteTag(tagCode: string) {
