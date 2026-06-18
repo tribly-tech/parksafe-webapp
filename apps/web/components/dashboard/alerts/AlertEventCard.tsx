@@ -19,10 +19,13 @@ interface AlertEventCardProps {
 
 export function AlertEventCard({ event, perspective = 'sent' }: AlertEventCardProps) {
   const t = useTranslations()
-  const issue = getAlertIssueDisplay(event.issueType, event.issueLabel, {
-    perspective,
-    translate: perspective === 'received' ? t : undefined,
-  })
+  const issue =
+    perspective === 'received'
+      ? getAlertIssueDisplay(event.issueType, event.issueLabel, {
+          perspective: 'received',
+          translate: key => t(key),
+        })
+      : getAlertIssueDisplay(event.issueType, event.issueLabel)
   const time = getAlertTimeDisplay(event.createdAt)
 
   return (
