@@ -55,6 +55,7 @@ app.use('/dashboard/*', authMiddleware)
 app.route('/dashboard', dashboardRoutes)
 
 app.use('/profile', authMiddleware)
+app.use('/profile/*', authMiddleware)
 app.route('/profile', profileRoutes)
 
 // ── 404 Handler ───────────────────────────────────────────────────────────────
