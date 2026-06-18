@@ -4,7 +4,7 @@
 
 /** Strips non-digits and keeps the last 10 digits. */
 export function sanitizeIndianMobile(value: string): string {
-  return value.replace(/\D/g, '').slice(0, 10)
+  return value.replace(/\D/g, '').slice(-10)
 }
 
 /** Converts 10-digit input to E.164 (+91XXXXXXXXXX). */

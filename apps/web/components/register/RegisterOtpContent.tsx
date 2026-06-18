@@ -8,6 +8,7 @@ import { ApiError } from '@/lib/api/client'
 import {
   clearRegisterDraft,
   loadRegisterDraft,
+  updateRegisterDraftDevOtp,
 } from '@/lib/flow-storage'
 import { routes } from '@/lib/routes'
 import { useAuthStore } from '@/lib/store/authStore'
@@ -27,11 +28,13 @@ export function RegisterOtpContent() {
 
   const [ready, setReady] = useState(false)
   const [phoneDigits, setPhoneDigits] = useState('')
+  const [devOtp, setDevOtp] = useState<string | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [resendCooldown, setResendCooldown] = useState(RESEND_COOLDOWN_SECONDS)
   const otpAttemptCount = useRef(0)
   const step2Tracked = useRef(false)
+  const verifyInFlight = useRef(false)
 
   useEffect(() => {
     const draft = loadRegisterDraft()
@@ -40,6 +43,7 @@ export function RegisterOtpContent() {
       return
     }
     setPhoneDigits(draft.form.ownerPhone)
+    setDevOtp(draft.devOtp ?? null)
     setReady(true)
   }, [router, tagFromUrl])
 
@@ -61,12 +65,15 @@ export function RegisterOtpContent() {
 
   const completeRegistration = useCallback(
     async (otpCode: string) => {
+      if (verifyInFlight.current) return
+
       const draft = loadRegisterDraft()
       if (!draft) {
         handleClose()
         return
       }
 
+      verifyInFlight.current = true
       setIsSubmitting(true)
       setSubmitError(null)
 
@@ -100,6 +107,7 @@ export function RegisterOtpContent() {
               : t('GLOBAL_ERROR_GENERIC')
         setSubmitError(message)
       } finally {
+        verifyInFlight.current = false
         setIsSubmitting(false)
       }
     },
@@ -110,8 +118,10 @@ export function RegisterOtpContent() {
     const draft = loadRegisterDraft()
     if (!draft || resendCooldown > 0) return
     try {
-      await requestOtp({ phone: toE164Indian(draft.form.ownerPhone) })
+      const result = await requestOtp({ phone: toE164Indian(draft.form.ownerPhone) })
       track({ event: 'otp_requested', properties: { flow: 'register' } })
+      updateRegisterDraftDevOtp(result.devOtp ?? '')
+      setDevOtp(result.devOtp ?? null)
       setResendCooldown(RESEND_COOLDOWN_SECONDS)
       setSubmitError(null)
     } catch (err) {
@@ -127,6 +137,7 @@ export function RegisterOtpContent() {
     <RegisterOtpDialog
       open
       phoneDigits={phoneDigits}
+      devOtp={devOtp}
       error={submitError}
       isVerifying={isSubmitting}
       isResending={false}

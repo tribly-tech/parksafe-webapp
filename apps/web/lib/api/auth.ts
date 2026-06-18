@@ -3,6 +3,8 @@ import type { RequestOtpInput, VerifyOtpInput } from '@parksafe/types'
 
 interface RequestOtpResponse {
   message: string
+  /** Present in OTP dev mode — shown on-screen for local testing only. */
+  devOtp?: string
 }
 
 interface VerifyOtpResponse {

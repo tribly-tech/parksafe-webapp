@@ -10,6 +10,8 @@ import { cn } from '@/lib/utils/cn'
 interface RegisterOtpDialogProps {
   phoneDigits: string
   open: boolean
+  /** Shown in local dev when API returns devOtp — never shown in production. */
+  devOtp?: string | null
   error: string | null
   isVerifying: boolean
   isResending: boolean
@@ -27,6 +29,7 @@ const RESEND_COOLDOWN_SECONDS = 30
 export function RegisterOtpDialog({
   phoneDigits,
   open,
+  devOtp,
   error,
   isVerifying,
   isResending,
@@ -50,6 +53,10 @@ export function RegisterOtpDialog({
   useEffect(() => {
     if (open) setOtpKey(k => k + 1)
   }, [open])
+
+  useEffect(() => {
+    if (error) setOtpKey(k => k + 1)
+  }, [error])
 
   if (!open) return null
 
@@ -87,6 +94,19 @@ export function RegisterOtpDialog({
             <X className="size-5 text-neutral-600" aria-hidden />
           </button>
         </div>
+
+        {devOtp && (
+          <div
+            className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+            role="status"
+          >
+            <p className="font-semibold">Dev mode OTP</p>
+            <p className="mt-1 font-mono text-lg tracking-widest">{devOtp}</p>
+            <p className="mt-1 text-xs text-amber-800">
+              Use this code only — it expires when you resend or restart the API.
+            </p>
+          </div>
+        )}
 
         <OtpInput
           key={otpKey}

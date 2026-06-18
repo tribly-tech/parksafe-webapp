@@ -6,6 +6,8 @@ const REGISTER_DRAFT_KEY = 'parksafe-register-draft'
 interface RegisterDraftPayload {
   form: RegisterVehicleFormInput
   tagCode?: string
+  /** Latest OTP from API in dev mode — invalidates on resend. */
+  devOtp?: string
 }
 
 export function saveSignInPhone(digits: string): void {
@@ -23,10 +25,24 @@ export function clearSignInPhone(): void {
   sessionStorage.removeItem(SIGN_IN_PHONE_KEY)
 }
 
-export function saveRegisterDraft(form: RegisterVehicleFormInput, tagCode?: string): void {
+export function saveRegisterDraft(
+  form: RegisterVehicleFormInput,
+  tagCode?: string,
+  devOtp?: string
+): void {
   if (typeof sessionStorage === 'undefined') return
-  const payload: RegisterDraftPayload = { form, ...(tagCode ? { tagCode } : {}) }
+  const payload: RegisterDraftPayload = {
+    form,
+    ...(tagCode ? { tagCode } : {}),
+    ...(devOtp ? { devOtp } : {}),
+  }
   sessionStorage.setItem(REGISTER_DRAFT_KEY, JSON.stringify(payload))
+}
+
+export function updateRegisterDraftDevOtp(devOtp: string): void {
+  const draft = loadRegisterDraft()
+  if (!draft) return
+  saveRegisterDraft(draft.form, draft.tagCode, devOtp)
 }
 
 export function loadRegisterDraft(): RegisterDraftPayload | null {

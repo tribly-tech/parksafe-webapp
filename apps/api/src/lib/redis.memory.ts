@@ -8,7 +8,7 @@ interface MemoryEntry {
   expiresAt?: number
 }
 
-export function createInMemoryRedis() {
+function createStore() {
   const store = new Map<string, MemoryEntry>()
 
   return {
@@ -61,4 +61,17 @@ export function createInMemoryRedis() {
       return Math.max(0, Math.ceil((entry.expiresAt - Date.now()) / 1000))
     },
   }
+}
+
+/** Shared dev store — survives API hot reload within the same Node process. */
+export function createInMemoryRedis() {
+  const globalStore = globalThis as typeof globalThis & {
+    __parksafeInMemoryRedis?: ReturnType<typeof createStore>
+  }
+
+  if (!globalStore.__parksafeInMemoryRedis) {
+    globalStore.__parksafeInMemoryRedis = createStore()
+  }
+
+  return globalStore.__parksafeInMemoryRedis
 }

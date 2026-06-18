@@ -122,9 +122,9 @@ export function RegisterForm() {
     setIsSendingOtp(true)
 
     try {
-      await requestOtp({ phone: toE164Indian(data.ownerPhone) })
+      const result = await requestOtp({ phone: toE164Indian(data.ownerPhone) })
       track({ event: 'otp_requested', properties: { flow: 'register' } })
-      saveRegisterDraft(data, tagCode)
+      saveRegisterDraft(data, tagCode, result.devOtp)
       router.push(routes.registerOtp(tagCode ? { tag: tagCode } : undefined))
     } catch (err) {
       const message =
