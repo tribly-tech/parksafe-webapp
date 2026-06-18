@@ -3,6 +3,7 @@
 import { useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { IssueType } from '@parksafe/types'
+import { QrEntryTracker } from '@/components/analytics/QrEntryTracker'
 import { track } from '@/lib/utils/analytics'
 import { useContactStore } from '@/lib/store/contactStore'
 import { buildContactPaths } from '@/lib/contact/paths'
@@ -43,6 +44,7 @@ export function ContactIssueStep({ tagId, basePath, vehicle }: ContactIssueStepP
 
   return (
     <ContactFlowShell step={1}>
+      <QrEntryTracker tagStatus="ACTIVE" />
       <div className="flex flex-col gap-5">
         <VehicleCard {...vehicle} />
 

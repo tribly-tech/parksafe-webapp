@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl'
 import { useEffect, useState } from 'react'
 import { useProfile } from '@/lib/hooks/useProfile'
 import { useAuthStore } from '@/lib/store/authStore'
+import { resetAnalyticsIdentity } from '@/lib/utils/analytics'
 import { switchTrackVariants, switchThumbVariants } from '@/components/ui/switch'
 import { cn } from '@/lib/utils/cn'
 import { ApiError } from '@/lib/api/client'
@@ -152,6 +153,7 @@ function SettingsFormInner() {
       <button
         type="button"
         onClick={() => {
+          resetAnalyticsIdentity()
           clearSession()
           router.replace(routes.signIn)
         }}

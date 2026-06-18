@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
+import { QrEntryTracker } from '@/components/analytics/QrEntryTracker'
 import { ContactIssueStep } from '@/components/contact/ContactIssueStep'
 import { ContactStatusScreen } from '@/components/contact/ContactStatusScreen'
 import { resolveContactTag } from '@/lib/contact/resolveContactTag'
@@ -25,11 +26,14 @@ export default async function ContactTagIssuePage({ params }: Props) {
   if (!result.ok) {
     if (result.reason === 'INACTIVE') {
       return (
-        <ContactStatusScreen
-          emoji="⏸️"
-          title={en.CONTACT_TAG_INACTIVE_TITLE}
-          body={en.CONTACT_TAG_INACTIVE_BODY}
-        />
+        <>
+          <QrEntryTracker tagStatus="INACTIVE" />
+          <ContactStatusScreen
+            emoji="⏸️"
+            title={en.CONTACT_TAG_INACTIVE_TITLE}
+            body={en.CONTACT_TAG_INACTIVE_BODY}
+          />
+        </>
       )
     }
 

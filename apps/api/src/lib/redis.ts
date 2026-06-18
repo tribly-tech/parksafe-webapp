@@ -1,12 +1,19 @@
 import { Redis } from '@upstash/redis'
-import { env } from '../types/env'
+import { env, isOtpDevMode } from '../types/env'
 import { createInMemoryRedis } from './redis.memory'
 
-/** True only when both Upstash vars are set in the environment (not dev defaults). */
+/** True when Upstash is configured with real credentials (not local dev placeholders). */
 export function isUpstashConfigured(): boolean {
-  return Boolean(
-    process.env['UPSTASH_REDIS_REST_URL'] && process.env['UPSTASH_REDIS_REST_TOKEN']
-  )
+  if (isOtpDevMode) return false
+
+  const url = process.env['UPSTASH_REDIS_REST_URL']
+  const token = process.env['UPSTASH_REDIS_REST_TOKEN']
+  if (!url || !token) return false
+
+  // Ignore template values from .env.example — they break OTP with "fetch failed".
+  if (url.includes('your-redis') || token === 'your-redis-token') return false
+
+  return true
 }
 
 /**

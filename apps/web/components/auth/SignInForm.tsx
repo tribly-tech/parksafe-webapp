@@ -12,6 +12,7 @@ import { ApiError } from '@/lib/api/client'
 import { loadSignInPhone, saveSignInPhone } from '@/lib/flow-storage'
 import { routes } from '@/lib/routes'
 import { useAuthStore } from '@/lib/store/authStore'
+import { track } from '@/lib/utils/analytics'
 import { sanitizeIndianMobile, toE164Indian } from '@/lib/utils/phoneUtils'
 
 const INDIAN_MOBILE_PATTERN = /^[6-9]\d{9}$/
@@ -58,6 +59,7 @@ export function SignInForm() {
         return
       }
       await requestOtp({ phone: phoneE164 })
+      track({ event: 'otp_requested', properties: { flow: 'sign_in' } })
       saveSignInPhone(phone)
       router.push(routes.signInOtp)
     } catch (err) {

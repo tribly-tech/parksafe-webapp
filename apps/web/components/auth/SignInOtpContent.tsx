@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -11,6 +11,7 @@ import { ApiError } from '@/lib/api/client'
 import { clearSignInPhone, loadSignInPhone, saveSignInPhone } from '@/lib/flow-storage'
 import { routes } from '@/lib/routes'
 import { useAuthStore } from '@/lib/store/authStore'
+import { track } from '@/lib/utils/analytics'
 import { maskIndianMobile, toE164Indian } from '@/lib/utils/phoneUtils'
 import { RESEND_COOLDOWN_SECONDS } from '@/components/register/RegisterOtpDialog'
 import { cn } from '@/lib/utils/cn'
@@ -26,6 +27,7 @@ export function SignInOtpContent() {
   const [isSendingOtp, setIsSendingOtp] = useState(false)
   const [isVerifying, setIsVerifying] = useState(false)
   const [resendCooldown, setResendCooldown] = useState(0)
+  const otpAttemptCount = useRef(0)
 
   useEffect(() => {
     const stored = loadSignInPhone()
@@ -54,6 +56,7 @@ export function SignInOtpContent() {
     setIsSendingOtp(true)
     try {
       await requestOtp({ phone: phoneE164 })
+      track({ event: 'otp_requested', properties: { flow: 'sign_in' } })
       setResendCooldown(RESEND_COOLDOWN_SECONDS)
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t('GLOBAL_ERROR_GENERIC'))
@@ -71,6 +74,7 @@ export function SignInOtpContent() {
         const result = await signIn({ phone: phoneE164, otp: otpCode })
         clearSignInPhone()
         setTokens(result.accessToken, result.refreshToken, result.userId)
+        track({ event: 'otp_verified', properties: { flow: 'sign_in' } })
         router.push(routes.dashboard)
       } catch (err) {
         if (err instanceof ApiError && err.code === SIGN_IN_NOT_REGISTERED_CODE) {
@@ -78,6 +82,11 @@ export function SignInOtpContent() {
           router.replace(routes.signIn)
           return
         }
+        otpAttemptCount.current += 1
+        track({
+          event: 'otp_failed',
+          properties: { flow: 'sign_in', attemptCount: otpAttemptCount.current },
+        })
         setError(err instanceof ApiError ? err.message : t('GLOBAL_ERROR_GENERIC'))
       } finally {
         setIsVerifying(false)

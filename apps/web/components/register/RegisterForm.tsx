@@ -20,6 +20,8 @@ import {
   type VehicleType,
 } from '@parksafe/types'
 import { useTranslations } from 'next-intl'
+import { useTrackOnce } from '@/lib/hooks/useTrackOnce'
+import { track } from '@/lib/utils/analytics'
 import { requestOtp } from '@/lib/api/auth'
 import { ApiError } from '@/lib/api/client'
 import { loadRegisterDraft, saveRegisterDraft } from '@/lib/flow-storage'
@@ -94,6 +96,12 @@ export function RegisterForm() {
     }
   }, [reset])
 
+  useTrackOnce(() => {
+    if (!tagCode) return
+    track({ event: 'qr_scanned', properties: { tagStatus: 'UNREGISTERED' } })
+    track({ event: 'registration_step', properties: { step: 1 } })
+  })
+
   useEffect(() => {
     if (submitError) {
       submitErrorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
@@ -115,6 +123,7 @@ export function RegisterForm() {
 
     try {
       await requestOtp({ phone: toE164Indian(data.ownerPhone) })
+      track({ event: 'otp_requested', properties: { flow: 'register' } })
       saveRegisterDraft(data, tagCode)
       router.push(routes.registerOtp(tagCode ? { tag: tagCode } : undefined))
     } catch (err) {

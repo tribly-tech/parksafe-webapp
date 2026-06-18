@@ -7,6 +7,7 @@ import { useAuthStore } from '@/lib/store/authStore'
 interface TagPreferences {
   notifyWhatsapp?: boolean
   callEnabled?: boolean
+  status?: 'ACTIVE' | 'INACTIVE'
 }
 
 /**

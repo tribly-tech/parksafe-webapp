@@ -1,18 +1,29 @@
 import posthog from 'posthog-js'
 
+/** True when PostHog key is set and analytics is not explicitly disabled. */
+export function isAnalyticsEnabled(): boolean {
+  if (typeof window === 'undefined') return false
+  if (!process.env['NEXT_PUBLIC_POSTHOG_KEY']) return false
+  if (process.env['NEXT_PUBLIC_POSTHOG_DISABLED'] === 'true') return false
+  return (
+    process.env.NODE_ENV === 'production' ||
+    process.env['NEXT_PUBLIC_POSTHOG_ENABLED'] === 'true'
+  )
+}
+
 /**
  * Discriminated union of all trackable analytics events.
- * Each event type has exactly the properties it needs — no extra fields allowed.
  * CRITICAL: No PII in any event or property — anonymous IDs and enum labels only.
  */
-type AnalyticsEvent =
+export type AnalyticsEvent =
   | { event: 'qr_scanned'; properties: { tagStatus: 'ACTIVE' | 'INACTIVE' | 'UNREGISTERED' } }
   | { event: 'issue_selected'; properties: { issueType: string } }
   | { event: 'channel_selected'; properties: { channel: 'WHATSAPP' | 'CALL' } }
   | { event: 'contact_sent'; properties: { channel: string; issueType: string } }
-  | { event: 'otp_requested'; properties: Record<string, never> }
-  | { event: 'otp_verified'; properties: Record<string, never> }
-  | { event: 'otp_failed'; properties: { attemptCount: number } }
+  | { event: 'contact_failed'; properties: { channel: string; issueType: string; status: number } }
+  | { event: 'otp_requested'; properties: { flow: 'register' | 'sign_in' } }
+  | { event: 'otp_verified'; properties: { flow: 'register' | 'sign_in' } }
+  | { event: 'otp_failed'; properties: { flow: 'register' | 'sign_in'; attemptCount: number } }
   | { event: 'registration_step'; properties: { step: number } }
   | { event: 'tag_activated'; properties: Record<string, never> }
   | { event: 'tag_deactivated'; properties: Record<string, never> }
@@ -21,12 +32,22 @@ type AnalyticsEvent =
 /**
  * Tracks an analytics event with PostHog.
  * Safe: no PII, no phone numbers, no plates, no names.
- * No-ops during SSR and in non-production environments.
- * @param analyticsEvent - Typed event with discriminated union for safety
  */
 export function track({ event, properties }: AnalyticsEvent): void {
-  if (typeof window === 'undefined') return
-  if (process.env['NODE_ENV'] !== 'production') return
-
+  if (!isAnalyticsEnabled()) return
   posthog.capture(event, properties)
+}
+
+/**
+ * Links events to an anonymous owner UUID after auth — never pass phone or name.
+ */
+export function identifyOwner(userId: string): void {
+  if (!isAnalyticsEnabled()) return
+  posthog.identify(userId)
+}
+
+/** Clears identity on sign-out. */
+export function resetAnalyticsIdentity(): void {
+  if (!isAnalyticsEnabled()) return
+  posthog.reset()
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { requestOtp } from '@/lib/api/auth'
 import { registerVehicle } from '@/lib/api/registration'
@@ -11,6 +11,7 @@ import {
 } from '@/lib/flow-storage'
 import { routes } from '@/lib/routes'
 import { useAuthStore } from '@/lib/store/authStore'
+import { track } from '@/lib/utils/analytics'
 import { normalizePlate } from '@/lib/utils/plateFormat'
 import { toE164Indian } from '@/lib/utils/phoneUtils'
 import { RegisterOtpDialog, RESEND_COOLDOWN_SECONDS } from './RegisterOtpDialog'
@@ -29,6 +30,8 @@ export function RegisterOtpContent() {
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [resendCooldown, setResendCooldown] = useState(RESEND_COOLDOWN_SECONDS)
+  const otpAttemptCount = useRef(0)
+  const step2Tracked = useRef(false)
 
   useEffect(() => {
     const draft = loadRegisterDraft()
@@ -39,6 +42,12 @@ export function RegisterOtpContent() {
     setPhoneDigits(draft.form.ownerPhone)
     setReady(true)
   }, [router, tagFromUrl])
+
+  useEffect(() => {
+    if (!ready || step2Tracked.current) return
+    step2Tracked.current = true
+    track({ event: 'registration_step', properties: { step: 2 } })
+  }, [ready])
 
   useEffect(() => {
     if (resendCooldown <= 0) return
@@ -74,8 +83,15 @@ export function RegisterOtpContent() {
         const result = await registerVehicle(payload)
         clearRegisterDraft()
         setTokens(result.accessToken, result.refreshToken, result.userId)
+        track({ event: 'otp_verified', properties: { flow: 'register' } })
+        track({ event: 'registration_step', properties: { step: 3 } })
         router.replace(routes.registerSuccess)
       } catch (err) {
+        otpAttemptCount.current += 1
+        track({
+          event: 'otp_failed',
+          properties: { flow: 'register', attemptCount: otpAttemptCount.current },
+        })
         const message =
           err instanceof ApiError
             ? err.message
@@ -95,6 +111,7 @@ export function RegisterOtpContent() {
     if (!draft || resendCooldown > 0) return
     try {
       await requestOtp({ phone: toE164Indian(draft.form.ownerPhone) })
+      track({ event: 'otp_requested', properties: { flow: 'register' } })
       setResendCooldown(RESEND_COOLDOWN_SECONDS)
       setSubmitError(null)
     } catch (err) {

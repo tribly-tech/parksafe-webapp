@@ -6,6 +6,7 @@ import { ChannelType, type IssueType } from '@parksafe/types'
 import { useTranslations } from 'next-intl'
 import { cva } from 'class-variance-authority'
 import { useContactFlow } from '@/lib/hooks/useContactFlow'
+import { track } from '@/lib/utils/analytics'
 import { cn } from '@/lib/utils/cn'
 import { type ReactNode } from 'react'
 import { ContactErrorBanner } from './ContactErrorBanner'
@@ -103,6 +104,10 @@ export function ChannelSelector({
                 disabled={!isAvailable || isSubmitting}
                 onClick={() => {
                   if (isAvailable) {
+                    track({
+                      event: 'channel_selected',
+                      properties: { channel: option.type as 'WHATSAPP' | 'CALL' },
+                    })
                     void selectChannelAndSubmit({
                       tagId,
                       issue,

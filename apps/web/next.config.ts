@@ -14,6 +14,11 @@ const monorepoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..
 const isDev = process.env.NODE_ENV === 'development'
 const apiOrigin = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
 
+const posthogHosts = [
+  'https://app.posthog.com',
+  'https://*.i.posthog.com',
+].join(' ')
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   // Monorepo root — avoids wrong workspace inference when multiple lockfiles exist.
@@ -44,12 +49,12 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://app.posthog.com",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://app.posthog.com https://*.i.posthog.com",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob:",
               [
                 "connect-src 'self'",
-                'https://app.posthog.com',
+                posthogHosts,
                 'https://graph.facebook.com',
                 isDev ? apiOrigin : '',
               ]

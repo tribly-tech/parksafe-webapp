@@ -1,6 +1,7 @@
 'use client'
 
 import { useTagStatus } from '@/lib/hooks/useTagStatus'
+import { track } from '@/lib/utils/analytics'
 import { useTranslations } from 'next-intl'
 import { cva } from 'class-variance-authority'
 
@@ -35,7 +36,16 @@ export function TagStatusToggle({ tagId, isActive }: TagStatusToggleProps) {
   const { updatePreferences, isUpdating } = useTagStatus(tagId)
 
   const handleToggle = async () => {
-    await updatePreferences({ status: isActive ? 'INACTIVE' : 'ACTIVE' } as Parameters<typeof updatePreferences>[0])
+    const nextStatus = isActive ? 'INACTIVE' : 'ACTIVE'
+    try {
+      await updatePreferences({ status: nextStatus })
+      track({
+        event: nextStatus === 'ACTIVE' ? 'tag_activated' : 'tag_deactivated',
+        properties: {},
+      })
+    } catch {
+      // Error surfaced via mutation state upstream
+    }
   }
 
   return (

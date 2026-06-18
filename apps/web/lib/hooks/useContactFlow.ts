@@ -106,6 +106,12 @@ export function useContactFlow() {
         router.push(`${successPath}?${params.toString()}`)
         return true
       } catch (err) {
+        if (err instanceof ApiError) {
+          track({
+            event: 'contact_failed',
+            properties: { channel, issueType: issue, status: err.status },
+          })
+        }
         setError(mapContactError(err))
         return false
       } finally {
