@@ -17,20 +17,41 @@ const apiOrigin = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
 const posthogHosts = [
   'https://app.posthog.com',
   'https://*.i.posthog.com',
+  'https://*.posthog.com',
 ].join(' ')
+
+function getPostHogRegion(): 'us' | 'eu' {
+  const host = process.env.NEXT_PUBLIC_POSTHOG_HOST ?? 'https://us.i.posthog.com'
+  return host.includes('eu') ? 'eu' : 'us'
+}
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // PostHog API uses trailing slashes (e.g. /e/); avoid Next.js redirect breaking capture.
+  skipTrailingSlashRedirect: true,
   // Monorepo root — avoids wrong workspace inference when multiple lockfiles exist.
   outputFileTracingRoot: monorepoRoot,
 
   async rewrites() {
-    return [
+    const rewrites = [
       {
         source: '/backend/:path*',
         destination: `${apiOrigin}/:path*`,
       },
     ]
+
+    if (process.env.NEXT_PUBLIC_POSTHOG_KEY?.trim()) {
+      const region = getPostHogRegion()
+      const apiHost = `https://${region}.i.posthog.com`
+      const assetsHost = `https://${region}-assets.i.posthog.com`
+      rewrites.push(
+        { source: '/ingest/static/:path*', destination: `${assetsHost}/static/:path*` },
+        { source: '/ingest/array/:path*', destination: `${assetsHost}/array/:path*` },
+        { source: '/ingest/:path*', destination: `${apiHost}/:path*` }
+      )
+    }
+
+    return rewrites
   },
 
   async headers() {

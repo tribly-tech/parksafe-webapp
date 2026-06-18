@@ -555,7 +555,8 @@ export const en = {
   ADMIN_BATCH_SAMPLES_COPY: 'Copy URL',
   ADMIN_BATCH_SAMPLES_COPIED: 'Copied',
   ADMIN_DOWNLOAD_INFO_TITLE: 'What\'s in the ZIP?',
-  ADMIN_DOWNLOAD_INFO_QR: 'PNG QR codes in qr-codes/{batch}/ — one file per tag, in a batch-specific folder.',
+  ADMIN_DOWNLOAD_INFO_QR:
+    'PNG QR codes in a batch-specific qr-codes/ folder — one PNG file per tag.',
   ADMIN_DOWNLOAD_INFO_CSV: 'tag_inventory.csv with Tag ID, code, contact URL, and status.',
   ADMIN_DOWNLOAD_INFO_SHEETS: 'Import the CSV directly into Google Sheets for inventory.',
 

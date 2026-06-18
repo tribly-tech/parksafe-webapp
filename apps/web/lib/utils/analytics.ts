@@ -3,7 +3,7 @@ import posthog from 'posthog-js'
 /** True when PostHog key is set and analytics is not explicitly disabled. */
 export function isAnalyticsEnabled(): boolean {
   if (typeof window === 'undefined') return false
-  if (!process.env['NEXT_PUBLIC_POSTHOG_KEY']) return false
+  if (!process.env['NEXT_PUBLIC_POSTHOG_KEY']?.trim()) return false
   if (process.env['NEXT_PUBLIC_POSTHOG_DISABLED'] === 'true') return false
   return (
     process.env.NODE_ENV === 'production' ||

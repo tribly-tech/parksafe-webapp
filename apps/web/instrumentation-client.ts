@@ -1,7 +1,8 @@
 import posthog from 'posthog-js'
 
-const key = process.env.NEXT_PUBLIC_POSTHOG_KEY
+const key = process.env.NEXT_PUBLIC_POSTHOG_KEY?.trim()
 const host = process.env.NEXT_PUBLIC_POSTHOG_HOST ?? 'https://us.i.posthog.com'
+const region = host.includes('eu') ? 'eu' : 'us'
 const enabled =
   Boolean(key) &&
   process.env.NEXT_PUBLIC_POSTHOG_DISABLED !== 'true' &&
@@ -14,11 +15,14 @@ function capturePageview(url: string): void {
 
 if (enabled && key) {
   posthog.init(key, {
-    api_host: host,
+    // Same-origin proxy in next.config.ts — avoids ad blockers and config CDN issues.
+    api_host: '/ingest',
+    ui_host: `https://${region}.posthog.com`,
     defaults: '2026-01-30',
     capture_pageview: false,
     capture_pageleave: true,
     disable_session_recording: true,
+    advanced_disable_flags: true,
     respect_dnt: true,
   })
 
