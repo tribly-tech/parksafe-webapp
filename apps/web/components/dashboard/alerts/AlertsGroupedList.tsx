@@ -71,7 +71,7 @@ export function AlertsGroupedList({
             <ul className="flex flex-col gap-3" aria-label={t(ALERT_DATE_GROUP_LABEL_KEYS[group])}>
               {groupEvents.map(event => (
                 <li key={event.id}>
-                  <AlertEventCard event={event} />
+                  <AlertEventCard event={event} perspective={variant} />
                 </li>
               ))}
             </ul>

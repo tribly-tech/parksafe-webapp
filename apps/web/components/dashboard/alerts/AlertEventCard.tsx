@@ -7,17 +7,22 @@ import {
   getAlertIssueDisplay,
   getAlertTimeDisplay,
   type AlertListEvent,
+  type AlertPerspective,
 } from '@/lib/utils/alertDisplay'
 import { cn } from '@/lib/utils/cn'
 import { AlertChannelBadge } from './AlertChannelBadge'
 
 interface AlertEventCardProps {
   event: AlertListEvent
+  perspective?: AlertPerspective
 }
 
-export function AlertEventCard({ event }: AlertEventCardProps) {
+export function AlertEventCard({ event, perspective = 'sent' }: AlertEventCardProps) {
   const t = useTranslations()
-  const issue = getAlertIssueDisplay(event.issueType, event.issueLabel)
+  const issue = getAlertIssueDisplay(event.issueType, event.issueLabel, {
+    perspective,
+    translate: perspective === 'received' ? t : undefined,
+  })
   const time = getAlertTimeDisplay(event.createdAt)
 
   return (

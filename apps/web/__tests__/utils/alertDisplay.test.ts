@@ -55,6 +55,27 @@ describe('alertDisplay', () => {
     expect(unknown.isEmergency).toBe(false)
   })
 
+  it('uses owner-facing copy for received blocking alerts', () => {
+    const received = getAlertIssueDisplay('BLOCKING_VEHICLE', 'Blocking vehicle', {
+      perspective: 'received',
+      translate: key =>
+        ({
+          DASHBOARD_ALERT_RECEIVED_BLOCKING_LABEL: 'Blocking another driver',
+          DASHBOARD_ALERT_RECEIVED_BLOCKING_DESC:
+            "Your vehicle is occupying someone else's parking spot",
+        })[key] ?? key,
+    })
+
+    expect(received.label).toBe('Blocking another driver')
+    expect(received.description).toBe("Your vehicle is occupying someone else's parking spot")
+  })
+
+  it('keeps reporter-facing copy for sent alerts', () => {
+    const sent = getAlertIssueDisplay('BLOCKING_VEHICLE', 'Blocking vehicle')
+    expect(sent.label).toBe('Blocking my vehicle')
+    expect(sent.description).toBe('Vehicle is blocking my spot')
+  })
+
   it('flags emergency issues', () => {
     const emergency = getAlertIssueDisplay('EMERGENCY', 'Emergency')
     expect(emergency.isEmergency).toBe(true)

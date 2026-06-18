@@ -69,14 +69,69 @@ export function getAlertChannelKey(channel: string | undefined | null): AlertCha
   }
 }
 
+export type AlertPerspective = 'received' | 'sent'
+
+const RECEIVED_ISSUE_TRANSLATION_KEYS: Partial<
+  Record<IssueType, { labelKey: string; descriptionKey: string }>
+> = {
+  [IssueType.BLOCKING_VEHICLE]: {
+    labelKey: 'DASHBOARD_ALERT_RECEIVED_BLOCKING_LABEL',
+    descriptionKey: 'DASHBOARD_ALERT_RECEIVED_BLOCKING_DESC',
+  },
+  [IssueType.WRONG_PARKING]: {
+    labelKey: 'DASHBOARD_ALERT_RECEIVED_WRONG_PARKING_LABEL',
+    descriptionKey: 'DASHBOARD_ALERT_RECEIVED_WRONG_PARKING_DESC',
+  },
+  [IssueType.LIGHTS_ON]: {
+    labelKey: 'DASHBOARD_ALERT_RECEIVED_LIGHTS_ON_LABEL',
+    descriptionKey: 'DASHBOARD_ALERT_RECEIVED_LIGHTS_ON_DESC',
+  },
+  [IssueType.DOOR_OPEN]: {
+    labelKey: 'DASHBOARD_ALERT_RECEIVED_DOOR_OPEN_LABEL',
+    descriptionKey: 'DASHBOARD_ALERT_RECEIVED_DOOR_OPEN_DESC',
+  },
+  [IssueType.FLAT_TYRE]: {
+    labelKey: 'DASHBOARD_ALERT_RECEIVED_FLAT_TYRE_LABEL',
+    descriptionKey: 'DASHBOARD_ALERT_RECEIVED_FLAT_TYRE_DESC',
+  },
+  [IssueType.FLUID_LEAKING]: {
+    labelKey: 'DASHBOARD_ALERT_RECEIVED_FLUID_LEAKING_LABEL',
+    descriptionKey: 'DASHBOARD_ALERT_RECEIVED_FLUID_LEAKING_DESC',
+  },
+  [IssueType.VEHICLE_DAMAGE]: {
+    labelKey: 'DASHBOARD_ALERT_RECEIVED_DAMAGE_LABEL',
+    descriptionKey: 'DASHBOARD_ALERT_RECEIVED_DAMAGE_DESC',
+  },
+  [IssueType.EMERGENCY]: {
+    labelKey: 'DASHBOARD_ALERT_RECEIVED_EMERGENCY_LABEL',
+    descriptionKey: 'DASHBOARD_ALERT_RECEIVED_EMERGENCY_DESC',
+  },
+}
+
 /** Resolves issue emoji, label, and description with safe fallbacks. */
 export function getAlertIssueDisplay(
   issueType: string | undefined | null,
-  issueLabel: string | undefined | null
+  issueLabel: string | undefined | null,
+  options?: {
+    perspective?: AlertPerspective
+    translate?: (key: string) => string
+  }
 ): AlertIssueDisplay {
   const normalizedType = issueType?.toUpperCase() ?? ''
   const meta = ISSUE_META[normalizedType as IssueType]
   const fallbackLabel = issueLabel?.trim() || 'Unknown issue'
+
+  if (options?.perspective === 'received' && options.translate) {
+    const received = RECEIVED_ISSUE_TRANSLATION_KEYS[normalizedType as IssueType]
+    if (received) {
+      return {
+        emoji: meta?.emoji ?? '📋',
+        label: options.translate(received.labelKey),
+        description: options.translate(received.descriptionKey),
+        isEmergency: normalizedType === IssueType.EMERGENCY,
+      }
+    }
+  }
 
   if (meta) {
     return {
